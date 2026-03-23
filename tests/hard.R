@@ -1,6 +1,6 @@
 # Load packages
-devtools::load_all("..")
-source("load_packages.R")
+devtools::load_all(".")
+source("tests/load_packages.R")
 
 # Load data
 data(neuroblastomaProcessed, package = "penaltyLearning")
