@@ -9,3 +9,5 @@
 **/*.quarto_ipynb
 
 build.R
+tests/solutions_cache/
+tests/solutions.pdf
