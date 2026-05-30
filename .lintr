@@ -1,0 +1,26 @@
+linters: linters_with_defaults(
+    # lintr defaults: https://lintr.r-lib.org/reference/default_linters.html
+    # the following setup changes/removes certain linters
+    assignment_linter = NULL, # do not force using <- for assignments
+    object_name_linter = object_name_linter(c("snake_case", "CamelCase", "SNAKE_CASE")), # only allow snake case and camel case object names
+    commented_code_linter = NULL, # allow code in comments
+    line_length_linter = line_length_linter(120L), # same as .editorconfig
+    # use indent=2 as in .editorconfig; also use block-aligned continuation with 2 space,
+    # not "align under first argument" style.
+    indentation_linter = indentation_linter(indent = 2L, hanging_indent_style = "never"),
+    object_length_linter = object_length_linter(40L),
+    undesirable_function_linter = undesirable_function_linter(fun = c(
+      # base messaging - use mlr3misc wrappers
+      cat = "use catf()",
+      stop = "use stopf()",
+      warning = "use warningf()",
+      message = "use messagef()",
+      # misc
+      which.min = "use which_min()",
+      which.max = "use which_max()",
+      # perf
+      ifelse = "use fifelse()",
+      rank = "use frank()",
+      rev = "use frev()"
+    ))
+    )
