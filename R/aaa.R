@@ -17,6 +17,9 @@ register_reflections = function() {
   # task properties
   x$task_properties$changepoint = x$task_properties$regr
 
+  # task features types
+  x$task_feature_types[["lst"]] = "list"
+
   # learner properties
   x$learner_properties$changepoint = x$learner_properties$regr
 
