@@ -7,8 +7,8 @@ register_reflections = function() {
   type = NULL
   x$task_types = x$task_types[type != "changepoint"]
   x$task_types = setkeyv(rbind(x$task_types, rowwise_table(
-    ~type, ~package, ~task, ~learner, ~prediction, ~measure,
-    "changepoint", "mlr3changepoint", "TaskCpt", "LearnerCpt", "PredictionCpt", "MeasureCpt"
+    ~type, ~package, ~task, ~learner, ~prediction, ~prediction_data, ~measure,
+    "changepoint", "mlr3changepoint", "TaskCpt", "LearnerCpt", "PredictionCpt", "PredictionDataCpt" ,"MeasureCpt"
   )), "type")
 
   # column roles
