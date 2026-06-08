@@ -24,7 +24,7 @@ unregister_mlr3_reflections = function() {
   x$task_types = x$task_types[package != "mlr3changepoint"]
   x$task_col_roles$changepoint = NULL
   x$task_properties$changepoint = NULL
-  x$task_feature_types[["lst"]] = NULL
+  x$task_feature_types = x$task_feature_types[names(x$task_feature_types) != "lst"]
   x$learner_properties$changepoint = NULL
   x$learner_predict_types$changepoint = NULL
 }
