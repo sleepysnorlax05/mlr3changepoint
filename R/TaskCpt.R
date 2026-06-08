@@ -2,7 +2,8 @@
 #'
 #' @description
 #' This task is designed for **weakly supervised change point detection** problems.
-#' It inherits from [mlr3::TaskSupervised] and includes additional column roles and properties specific to change point detection.
+#' It inherits from [mlr3::TaskSupervised]
+#' and includes additional column roles and properties for change point detection.
 #'
 #' The `task_type` is set to `"changepoint"`.
 #'

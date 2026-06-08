@@ -5,7 +5,8 @@
 \title{Weakly Supervised Task for Change Point Detection}
 \description{
 This task is designed for \strong{weakly supervised change point detection} problems.
-It inherits from \link[mlr3:TaskSupervised]{mlr3::TaskSupervised} and includes additional column roles and properties specific to change point detection.
+It inherits from \link[mlr3:TaskSupervised]{mlr3::TaskSupervised}
+and includes additional column roles and properties for change point detection.
 
 The \code{task_type} is set to \code{"changepoint"}.
 }
