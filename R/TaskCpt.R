@@ -18,12 +18,14 @@
 #' @family Task
 #'
 #' @examples
-#' # two labelled sequences; each row pairs a sequence with its region labels
-#' toy = data.table::data.table(
-#'   seq = list(rnorm(100), rnorm(100)),
+#' library(data.table)
+#' # one row per sequence; first has two labelled changes, second has none.
+#' set.seed(36)
+#' toy = data.table(
+#'   seq = list(c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9)), rnorm(100, 0)),
 #'   label = list(
-#'     data.table::data.table(start = 40, end = 60, label = "1change"),
-#'     data.table::data.table(start = 10, end = 90, label = "0changes")
+#'     data.table(start = c(90, 190), end = c(110, 210), label = c("1change", "1change")),
+#'     data.table(start = 1, end = 100, label = "0changes")
 #'   )
 #' )
 #'
