@@ -1,16 +1,13 @@
-# nolint start
 #' @import data.table
 #' @import mlr3
 #' @import mlr3misc
 #' @import paradox
 #' @import checkmate
 #' @importFrom R6 R6Class
-#' @importFrom utils data head tail
 "_PACKAGE"
-# nolint end
 
 .onLoad = function(libname, pkgname) {
-  register_mlr3()
+  register_namespace_callback(pkgname, "mlr3", register_mlr3)
 }
 
 .onUnload = function(libpath) {

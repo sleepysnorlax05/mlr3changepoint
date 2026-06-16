@@ -9,14 +9,7 @@ register_reflections = function() {
   x$task_types = setkeyv(
     rbind(
       x$task_types,
-      rowwise_table(
-        ~type,
-        ~package,
-        ~task,
-        ~learner,
-        ~prediction,
-        ~prediction_data,
-        ~measure,
+      list(
         "changepoint",
         "mlr3changepoint",
         "TaskCpt",
