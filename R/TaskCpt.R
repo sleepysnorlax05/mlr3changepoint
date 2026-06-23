@@ -58,7 +58,7 @@ TaskCpt = R6::R6Class(
     #' @param label (`character(1)`)\cr
     #'  Display name for the task.
     initialize = function(id, backend, target, sequence, label_type = "changepoint", label = NA_character_) {
-      checkmate::assert_choice(label_type, c("changepoint", "peak"))
+      assert_choice(label_type, c("changepoint", "peak"))
       private$.label_type = label_type
       backend = as_data_backend(backend)
 
