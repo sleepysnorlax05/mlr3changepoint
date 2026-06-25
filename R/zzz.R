@@ -7,10 +7,21 @@
 "_PACKAGE"
 
 .onLoad = function(libname, pkgname) {
-  # nocov start
-  assign("lg", lgr::get_logger(pkgname), envir = parent.env(environment()))
-  if (Sys.getenv("IN_PKGDOWN") == "true") {
-    lg$set_threshold("warn")
-  }
-  # nocov end
+  register_namespace_callback(pkgname, "mlr3", register_mlr3)
+}
+
+.onUnload = function(libpath) {
+  unregister_mlr3_reflections()
+}
+
+unregister_mlr3_reflections = function() {
+  x = utils::getFromNamespace("mlr_reflections", "mlr3")
+
+  package = NULL
+  x$task_types = x$task_types[package != "mlr3changepoint"]
+  x$task_col_roles$changepoint = NULL
+  x$task_properties$changepoint = NULL
+  x$task_feature_types = x$task_feature_types[names(x$task_feature_types) != "lst"]
+  x$learner_properties$changepoint = NULL
+  x$learner_predict_types$changepoint = NULL
 }
