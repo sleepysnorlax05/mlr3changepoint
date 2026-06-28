@@ -64,23 +64,28 @@ Identifier for the learner.}
 Set of hyperparameters.}
 
 \item{\code{predict_types}}{(\code{character()})\cr
-Supported predict types. A subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_predict_types}}.}
+Supported predict types. A subset of
+\code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_predict_types}}.}
 
 \item{\code{feature_types}}{(\code{character()})\cr
-Feature types the learner operates on. A subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$task_feature_types}}.}
+Feature types the learner can operate on. A subset of
+\code{\link[mlr3:mlr_reflections]{mlr_reflections$task_feature_types}}.}
 
 \item{\code{properties}}{(\code{character()})\cr
-Set of learner properties. A subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_properties}};
-see \link[mlr3:Learner]{mlr3::Learner} for the list of standardized properties.}
+Set of learner properties. A subset of
+\code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_properties}}.
+See \link[mlr3:Learner]{mlr3::Learner} for the standardized properties.}
 
 \item{\code{packages}}{(\code{character()})\cr
-Set of required packages.}
+Set of required packages. Checked for availability when the learner is
+constructed and loaded on demand before training and prediction.}
 
 \item{\code{label}}{(\code{character(1)})\cr
 Display name for the learner.}
 
 \item{\code{man}}{(\code{character(1)})\cr
-String in the format \verb{[pkg]::[topic]} pointing to the manual page.}
+String of the form \verb{[pkg]::[topic]} pointing to this object's help
+page, which can be opened via the \verb{$help()} method.}
 }
 \if{html}{\out{</div>}}
 }

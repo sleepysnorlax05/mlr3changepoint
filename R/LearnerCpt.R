@@ -20,18 +20,23 @@ LearnerCpt = R6::R6Class(
     #' @param param_set ([paradox::ParamSet])\cr
     #'  Set of hyperparameters.
     #' @param predict_types (`character()`)\cr
-    #'  Supported predict types. A subset of [`mlr_reflections$learner_predict_types`][mlr3::mlr_reflections].
+    #'  Supported predict types. A subset of
+    #'  [`mlr_reflections$learner_predict_types`][mlr3::mlr_reflections].
     #' @param feature_types (`character()`)\cr
-    #'  Feature types the learner operates on. A subset of [`mlr_reflections$task_feature_types`][mlr3::mlr_reflections].
+    #'  Feature types the learner can operate on. A subset of
+    #'  [`mlr_reflections$task_feature_types`][mlr3::mlr_reflections].
     #' @param properties (`character()`)\cr
-    #'  Set of learner properties. A subset of [`mlr_reflections$learner_properties`][mlr3::mlr_reflections];
-    #'  see [mlr3::Learner] for the list of standardized properties.
+    #'  Set of learner properties. A subset of
+    #'  [`mlr_reflections$learner_properties`][mlr3::mlr_reflections].
+    #'  See [mlr3::Learner] for the standardized properties.
     #' @param packages (`character()`)\cr
-    #'  Set of required packages.
+    #'  Set of required packages. Checked for availability when the learner is
+    #'  constructed and loaded on demand before training and prediction.
     #' @param label (`character(1)`)\cr
     #'  Display name for the learner.
     #' @param man (`character(1)`)\cr
-    #'  String in the format `[pkg]::[topic]` pointing to the manual page.
+    #'  String of the form `[pkg]::[topic]` pointing to this object's help
+    #'  page, which can be opened via the `$help()` method.
     initialize = function(
       id,
       param_set = ps(),
