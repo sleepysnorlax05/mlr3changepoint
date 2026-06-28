@@ -58,48 +58,29 @@ Creates a new instance of this \link[R6:R6Class]{R6} class.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{id}}{(\code{character(1)})\cr
-Identifier for the new instance.}
+Identifier for the learner.}
 
 \item{\code{param_set}}{(\link[paradox:ParamSet]{paradox::ParamSet})\cr
 Set of hyperparameters.}
 
 \item{\code{predict_types}}{(\code{character()})\cr
-Supported predict types. Must be a subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_predict_types}}.}
+Supported predict types. A subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_predict_types}}.}
 
 \item{\code{feature_types}}{(\code{character()})\cr
-Feature types the learner operates on. Must be a subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$task_feature_types}}.}
+Feature types the learner operates on. A subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$task_feature_types}}.}
 
 \item{\code{properties}}{(\code{character()})\cr
-Set of properties of the \link[mlr3:Learner]{mlr3::Learner}.
-Must be a subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_properties}}.
-The following properties are currently standardized and understood by learners in \CRANpkg{mlr3}:
-\itemize{
-\item \code{"missings"}: The learner can handle missing values in the data.
-\item \code{"weights"}: The learner supports observation weights.
-\item \code{"offset"}: The learner can incorporate offset values to adjust predictions.
-\item \code{"importance"}: The learner supports extraction of importance scores, i.e. comes with an \verb{$importance()} extractor function (see section on optional extractors in \link[mlr3:Learner]{mlr3::Learner}).
-\item \code{"selected_features"}: The learner supports extraction of the set of selected features, i.e. comes with a \verb{$selected_features()} extractor function (see section on optional extractors in \link[mlr3:Learner]{mlr3::Learner}).
-\item \code{"oob_error"}: The learner supports extraction of estimated out of bag error, i.e. comes with a \code{oob_error()} extractor function (see section on optional extractors in \link[mlr3:Learner]{mlr3::Learner}).
-\item \code{"validation"}: The learner can use a validation task during training.
-\item \code{"internal_tuning"}: The learner is able to internally optimize hyperparameters (those are also tagged with \code{"internal_tuning"}).
-\item \code{"marshal"}: To save learners with this property, you need to call \verb{$marshal()} first.
-If a learner is in a marshaled state, you call first need to call \verb{$unmarshal()} to use its model, e.g. for prediction.
-\item \code{"hotstart_forward"}: The learner supports to hotstart a model forward.
-\item \code{"hotstart_backward"}: The learner supports hotstarting a model backward.
-\item `"featureless": The learner does not use features.
-}}
+Set of learner properties. A subset of \code{\link[mlr3:mlr_reflections]{mlr_reflections$learner_properties}};
+see \link[mlr3:Learner]{mlr3::Learner} for the list of standardized properties.}
 
 \item{\code{packages}}{(\code{character()})\cr
-Set of required packages.
-A warning is signaled by the constructor if at least one of the packages is not installed,
-but loaded (not attached) later on-demand via \code{\link[=requireNamespace]{requireNamespace()}}.}
+Set of required packages.}
 
 \item{\code{label}}{(\code{character(1)})\cr
-Label for the new instance.}
+Display name for the learner.}
 
 \item{\code{man}}{(\code{character(1)})\cr
-String in the format \verb{[pkg]::[topic]} pointing to a manual page for this object.
-The referenced help package can be opened via method \verb{$help()}.}
+String in the format \verb{[pkg]::[topic]} pointing to the manual page.}
 }
 \if{html}{\out{</div>}}
 }

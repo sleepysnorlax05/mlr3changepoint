@@ -5,15 +5,6 @@
 #' Do not use this class directly, but rather inherit from it when implementing specific algorithms.
 #' It inherits from [mlr3::Learner] and sets the `task_type` to `"changepoint"`.
 #'
-#' @template param_id
-#' @template param_param_set
-#' @template param_predict_types
-#' @template param_feature_types
-#' @template param_learner_properties
-#' @template param_packages
-#' @template param_label
-#' @template param_man
-#'
 #' @family Learner
 #'
 #' @export
@@ -23,6 +14,24 @@ LearnerCpt = R6::R6Class(
   public = list(
     #' @description
     #' Creates a new instance of this [R6][R6::R6Class] class.
+    #'
+    #' @param id (`character(1)`)\cr
+    #'  Identifier for the learner.
+    #' @param param_set ([paradox::ParamSet])\cr
+    #'  Set of hyperparameters.
+    #' @param predict_types (`character()`)\cr
+    #'  Supported predict types. A subset of [`mlr_reflections$learner_predict_types`][mlr3::mlr_reflections].
+    #' @param feature_types (`character()`)\cr
+    #'  Feature types the learner operates on. A subset of [`mlr_reflections$task_feature_types`][mlr3::mlr_reflections].
+    #' @param properties (`character()`)\cr
+    #'  Set of learner properties. A subset of [`mlr_reflections$learner_properties`][mlr3::mlr_reflections];
+    #'  see [mlr3::Learner] for the list of standardized properties.
+    #' @param packages (`character()`)\cr
+    #'  Set of required packages.
+    #' @param label (`character(1)`)\cr
+    #'  Display name for the learner.
+    #' @param man (`character(1)`)\cr
+    #'  String in the format `[pkg]::[topic]` pointing to the manual page.
     initialize = function(
       id,
       param_set = ps(),
