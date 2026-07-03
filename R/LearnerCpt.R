@@ -59,5 +59,13 @@ LearnerCpt = R6::R6Class(
         man = man
       )
     }
+  ),
+  private = list(
+    .train = function(task) {
+      stopf("LearnerCpt is an abstract class that cannot be trained")
+    },
+    .predict = function(task) {
+      stopf("LearnerCpt is an abstract class that cannot predict")
+    }
   )
 )

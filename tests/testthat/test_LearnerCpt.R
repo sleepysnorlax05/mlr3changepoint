@@ -15,6 +15,8 @@ test_that("defaults are empty or NA", {
 })
 
 test_that("constructor forwards arguments for subclasses", {
+  skip_if_not_installed("penaltyLearning")
+
   learner = LearnerCpt$new(
     id = "fwd",
     properties = "missings",
@@ -29,5 +31,5 @@ test_that("constructor forwards arguments for subclasses", {
 
 test_that("the abstract base cannot train", {
   learner = LearnerCpt$new(id = "test")
-  expect_error(learner$train(toy()))
+  expect_error(learner$train(toy()), "abstract")
 })
