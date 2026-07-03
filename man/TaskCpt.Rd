@@ -22,7 +22,7 @@ This is stored as an extra argument and can be accessed via the active binding \
 }
 \examples{
 library(data.table)
-# one row per sequence; first has two labelled changes, second has none.
+# changepoint detection example
 set.seed(36)
 toy = data.table(
   seq = list(c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9)), rnorm(100, 0)),
@@ -39,6 +39,23 @@ task = TaskCpt$new(
 task
 task$truth()
 task$label_type
+
+# peak detection example
+set.seed(36)
+toy_peak = data.table(
+  seq = list(c(rpois(60, 2), rpois(40, 25), rpois(100, 2))),
+  label = list(
+    data.table(start = c(1, 55), end = c(50, 105), label = c("noPeaks", "peaks"))
+  )
+)
+
+task_peak = TaskCpt$new(
+  id = "toy_peak", backend = toy_peak,
+  target = "label", sequence = "seq", label_type = "peak"
+)
+task_peak
+task_peak$truth()
+task_peak$label_type
 
 }
 \concept{Task}
