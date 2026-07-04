@@ -7,6 +7,7 @@
 This learner is the base class for all weakly supervised changepoint detection learners.
 Do not use this class directly, but rather inherit from it when implementing specific algorithms.
 It inherits from \link[mlr3:Learner]{mlr3::Learner} and sets the \code{task_type} to \code{"changepoint"}.
+Calling \verb{$train()} or \verb{$predict()} on this base class raises an error.
 }
 \concept{Learner}
 \section{Super class}{

@@ -4,6 +4,7 @@
 #' This learner is the base class for all weakly supervised changepoint detection learners.
 #' Do not use this class directly, but rather inherit from it when implementing specific algorithms.
 #' It inherits from [mlr3::Learner] and sets the `task_type` to `"changepoint"`.
+#' Calling `$train()` or `$predict()` on this base class raises an error.
 #'
 #' @family Learner
 #'
