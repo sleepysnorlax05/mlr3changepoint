@@ -185,3 +185,5 @@ Meta/
 # cspell:
 cspell.json
 .cspell/
+/.quarto/
+**/*.quarto_ipynb
