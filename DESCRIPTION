@@ -23,6 +23,9 @@ Imports:
     paradox (>= 1.0.1),
     R6 (>= 2.4.1)
 Suggests:
+    changepoint,
+    PeakError,
+    PeakSegOptimal,
     penaltyLearning,
     testthat (>= 3.3.0)
 Remotes:
