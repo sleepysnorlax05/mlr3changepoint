@@ -52,6 +52,24 @@ cpt_feature_matrix = function(parts, cols = NULL) {
   feats[, cols, drop = FALSE]
 }
 
+#' Segment one sequence into the whole model path
+#'
+#' Fits the label-type solver for a single sequence and returns the path in one
+#' canonical shape shared by both branches:
+#' - `models`: one row per model with `complexity` (segment/peak count) and
+#'   `loss` (the solver cost), the `(loss, complexity)` table
+#'   [penaltyLearning::modelSelection()] consumes.
+#' - `predicted`: the detected changes/peaks, one row per model change, keyed by
+#'   the same `complexity`. Columns are branch-specific (`change` for
+#'   changepoint; `chromStart`/`chromEnd` for peak) because the downstream error
+#'   function ([cpt_model_errors]) is the branch point that reads them.
+#'
+#' @param seq (`numeric()`)\cr One sequence signal.
+#' @param Kmax (`integer(1)`)\cr Maximum number of changes (changepoint) or peaks
+#'   (peak) to search for; caps model complexity for both train and predict.
+#' @param label_type (`character(1)`)\cr `"changepoint"` or `"peak"`.
+#' @return `list(models, predicted)` as described above.
+#' @noRd
 cpt_segment_path = function(seq, Kmax, label_type) {
   switch(
     label_type,
@@ -148,4 +166,91 @@ cpt_path_peak = function(seq, Kmax) {
   )
 
   list(models = models, predicted = predicted)
+}
+
+#' Score a model path against labels into the canonical `model.errors` schema
+#'
+#' The branch point: both label types are normalized to the one schema
+#' `penaltyLearning::targetIntervals()` understands, i.e. per model per problem
+#' with `min.log.lambda`, `max.log.lambda`, `fp`, `fn`, `errors`.
+#'
+#' @param sm (`data.table`)\cr Combined [penaltyLearning::modelSelection()] output
+#'   across problems, carrying `problem`, `complexity`, `min.log.lambda`,
+#'   `max.log.lambda`.
+#' @param predicted (`data.table`)\cr Combined `predicted` geometry across
+#'   problems (see [cpt_segment_path]), keyed by `problem` and `complexity`.
+#' @param regions (`data.table`)\cr Combined labels across problems, columns
+#'   `problem`, `start`, `end`, `label`.
+#' @param label_type (`character(1)`)\cr `"changepoint"` or `"peak"`.
+#' @return A `data.table` in the canonical `model.errors` schema.
+#' @noRd
+cpt_model_errors = function(sm, predicted, regions, label_type) {
+  switch(
+    label_type,
+    changepoint = cpt_errors_changepoint(sm, predicted, regions),
+    peak = cpt_errors_peak(sm, predicted, regions),
+    stopf("unknown label_type: %s", label_type)
+  )
+}
+
+#' Changepoint errors: `penaltyLearning::labelError()` scores all models at once
+#' @noRd
+cpt_errors_changepoint = function(sm, predicted, regions) {
+  labels = copy(regions)
+  setnames(labels, "label", "annotation")
+
+  le = penaltyLearning::labelError(
+    models = sm,
+    labels = labels,
+    changes = predicted,
+    change.var = "change",
+    label.vars = c("start", "end"),
+    model.vars = "complexity",
+    problem.vars = "problem",
+    annotations = penaltyLearning::change.labels
+  )
+  data.table::as.data.table(le$model.errors)
+}
+
+#' Peak errors: `PeakError::PeakError()` is per-model and per-region, so loop and
+#' sum fp/fn across regions, then attach each model's log.lambda interval.
+#' @noRd
+cpt_errors_peak = function(sm, predicted, regions) {
+  # PeakError coordinates: chromStart 0-based, chromEnd 1-based. The mapping from
+  # TaskCpt (start, end) is passed through here; the region convention is a task
+  # design decision, not this helper's to reinterpret.
+  out = lapply(unique(sm[["problem"]]), function(p) {
+    sm_p = sm[sm[["problem"]] == p, ]
+    reg_p = regions[regions[["problem"]] == p, ]
+    pred_p = predicted[predicted[["problem"]] == p, ]
+
+    reg_df = data.frame(
+      chrom = rep("chr", nrow(reg_p)),
+      chromStart = reg_p[["start"]],
+      chromEnd = reg_p[["end"]],
+      annotation = reg_p[["label"]]
+    )
+
+    rows = lapply(seq_len(nrow(sm_p)), function(i) {
+      cx = sm_p[["complexity"]][i]
+      pk = pred_p[pred_p[["complexity"]] == cx, ]
+      peak_df = data.frame(
+        chrom = rep("chr", nrow(pk)),
+        chromStart = pk[["chromStart"]],
+        chromEnd = pk[["chromEnd"]]
+      )
+      pe = PeakError::PeakError(peak_df, reg_df)
+      data.table(
+        problem = p,
+        complexity = cx,
+        min.log.lambda = sm_p[["min.log.lambda"]][i],
+        max.log.lambda = sm_p[["max.log.lambda"]][i],
+        fp = sum(pe$fp),
+        fn = sum(pe$fn),
+        errors = sum(pe$fp) + sum(pe$fn)
+      )
+    })
+    rbindlist(rows)
+  })
+  rbindlist(out)
 }
