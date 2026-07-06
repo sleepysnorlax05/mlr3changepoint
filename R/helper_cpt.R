@@ -52,6 +52,15 @@ cpt_feature_matrix = function(parts, cols = NULL) {
   feats[, cols, drop = FALSE]
 }
 
+cpt_segment_path = function(seq, Kmax, label_type) {
+  switch(
+    label_type,
+    changepoint = cpt_path_changepoint(seq, Kmax),
+    peak = cpt_path_peak(seq, Kmax),
+    stopf("unknown label_type: %s", label_type)
+  )
+}
+
 #' Mean-change path via `changepoint::cpt.mean(method = "SegNeigh")`
 #' @noRd
 cpt_path_changepoint = function(seq, Kmax) {
