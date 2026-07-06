@@ -89,10 +89,14 @@ cpt_path_changepoint = function(seq, Kmax) {
     bounds = c(0L, ends, n)
     starts = utils::head(bounds, -1L) + 1L
     stops = bounds[-1L]
-    sum(vapply(seq_along(starts), function(j) {
-      v = seq[starts[j]:stops[j]]
-      sum((v - mean(v))^2)
-    }, numeric(1L)))
+    sum(vapply(
+      seq_along(starts),
+      function(j) {
+        v = seq[starts[j]:stops[j]]
+        sum((v - mean(v))^2)
+      },
+      numeric(1L)
+    ))
   }
 
   # Null model (no change) is always in the path.
@@ -130,21 +134,22 @@ cpt_path_changepoint = function(seq, Kmax) {
 cpt_path_peak = function(seq, Kmax) {
   count = as.integer(round(seq))
   if (any(count < 0L)) {
-    stop("peak detection requires non-negative counts")
+    stopf("peak detection requires non-negative counts")
   }
   n = length(count)
 
-  count.df = data.table::data.table(
+  count_df = data.table(
     count = count,
     chromStart = 0:(n - 1L),
     chromEnd = 1:n
   )
 
   fit = PeakSegOptimal::PeakSegPDPAchrom(
-    count.df, max.peaks = as.integer(Kmax)
+    count_df,
+    max.peaks = as.integer(Kmax)
   )
-  loss = data.table::as.data.table(fit$loss)
-  segs = data.table::as.data.table(fit$segments)
+  loss = as.data.table(fit$loss)
+  segs = as.data.table(fit$segments)
 
   # The PDPA path includes equality-constrained infeasible models; drop them
   # before model selection.
@@ -154,12 +159,12 @@ cpt_path_peak = function(seq, Kmax) {
   is_peak = segs[["status"]] == "peak" & segs[["peaks"]] %in% keep
   peakseg = segs[is_peak, ]
 
-  models = data.table::data.table(
+  models = data.table(
     complexity = loss[["peaks"]],
     loss = loss[["PoissonLoss"]]
   )
 
-  predicted = data.table::data.table(
+  predicted = data.table(
     complexity = peakseg[["peaks"]],
     chromStart = peakseg[["chromStart"]],
     chromEnd = peakseg[["chromEnd"]]
@@ -209,7 +214,7 @@ cpt_errors_changepoint = function(sm, predicted, regions) {
     problem.vars = "problem",
     annotations = penaltyLearning::change.labels
   )
-  data.table::as.data.table(le$model.errors)
+  as.data.table(le$model.errors)
 }
 
 #' Peak errors: `PeakError::PeakError()` is per-model and per-region, so loop and
@@ -253,4 +258,60 @@ cpt_errors_peak = function(sm, predicted, regions) {
     rbindlist(rows)
   })
   rbindlist(out)
+}
+
+#' Compute the log(penalty) target interval matrix for a TaskCpt
+#'
+#' The train-time label pipeline, tying the helpers together: fit the model
+#' path per sequence ([cpt_segment_path]), attach each model's selectable
+#' penalty interval via [penaltyLearning::modelSelection()], score the models
+#' against the labels ([cpt_model_errors]), and invert the error curves with
+#' [penaltyLearning::targetIntervals()] into the interval of log(lambda)
+#' values reaching minimal label error per sequence.
+#'
+#' @param task ([TaskCpt]).
+#' @param Kmax (`integer(1)`)\cr See [cpt_segment_path].
+#' @return A numeric matrix, one row per sequence aligned to `task$row_ids`
+#'   (`rownames` set to the sequence ids), columns `min.log.lambda` and
+#'   `max.log.lambda`: the `target.mat` shape
+#'   [penaltyLearning::IntervalRegressionCV()] consumes.
+#' @noRd
+cpt_target_intervals = function(task, Kmax) {
+  problem = NULL
+  label_type = task$label_type
+  parts = cpt_extract_data(task)
+  ids = parts$ids
+
+  sm_list = list()
+  predicted_list = list()
+  for (i in seq_along(parts$sequence)) {
+    path = cpt_segment_path(parts$sequence[[i]], Kmax, label_type)
+    ms = as.data.table(
+      penaltyLearning::modelSelection(as.data.frame(path$models), complexity = "complexity")
+    )
+
+    ms[, problem := ids[i]]
+    sm_list[[i]] = ms
+
+    if (nrow(path$predicted) > 0L) {
+      pr = as.data.table(path$predicted)
+      pr[, problem := ids[i]]
+      predicted_list[[i]] = pr
+    }
+  }
+
+  sm = rbindlist(sm_list)
+  predicted = rbindlist(predicted_list)
+  regions = rbindlist(Map(
+    function(id, tab) data.table(problem = id, tab),
+    ids, parts$target
+  ))
+
+  me = cpt_model_errors(sm, predicted, regions, label_type)
+  ti = as.data.table(penaltyLearning::targetIntervals(me, problem.vars = "problem"))
+
+  ti = ti[match(ids, ti$problem), ]
+  target = as.matrix(ti[, c("min.log.lambda", "max.log.lambda")])
+  rownames(target) = as.character(ids)
+  target
 }
