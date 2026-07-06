@@ -12,6 +12,7 @@ cpt_extract_data = function(task) {
     rows = task$row_ids,
     cols = c(seq_col, target_col, id_col)
   )
+  # Backends do not guarantee row order; realign to task$row_ids.
   dt = dt[match(task$row_ids, dt[[id_col]]), ]
 
   ids = dt[[id_col]]
@@ -48,6 +49,9 @@ cpt_feature_matrix = function(parts, cols = NULL) {
     finite = apply(feats, 2L, function(x) all(is.finite(x)))
     varies = apply(feats, 2L, function(x) length(unique(x)) > 1L)
     cols = colnames(feats)[finite & varies]
+    if (length(cols) == 0L) {
+      stopf("no usable features: every feature column is non-finite or constant across sequences")
+    }
   }
   feats[, cols, drop = FALSE]
 }
@@ -71,6 +75,10 @@ cpt_feature_matrix = function(parts, cols = NULL) {
 #' @return `list(models, predicted)` as described above.
 #' @noRd
 cpt_segment_path = function(seq, Kmax, label_type) {
+  # Both solvers fail with obscure errors on missing values; catch that here once.
+  if (anyNA(seq)) {
+    stopf("sequence contains missing values")
+  }
   switch(
     label_type,
     changepoint = cpt_path_changepoint(seq, Kmax),
@@ -132,12 +140,19 @@ cpt_path_changepoint = function(seq, Kmax) {
 #' Peak path via `PeakSegOptimal::PeakSegPDPAchrom()`
 #' @noRd
 cpt_path_peak = function(seq, Kmax) {
-  count = as.integer(round(seq))
+  # PeakSegPDPA models Poisson counts: reject real-valued or negative input
+  # instead of silently rounding it into a different dataset.
+  if (any(seq != round(seq))) {
+    stopf("peak detection requires integer counts")
+  }
+  count = as.integer(seq)
   if (any(count < 0L)) {
     stopf("peak detection requires non-negative counts")
   }
   n = length(count)
 
+  # Synthesize the 0-based chromStart / 1-based chromEnd genomic coordinates
+  # PeakSegPDPAchrom() expects from the plain sequence vector.
   count_df = data.table(
     count = count,
     chromStart = 0:(n - 1L),
@@ -229,6 +244,8 @@ cpt_errors_peak = function(sm, predicted, regions) {
     reg_p = regions[regions[["problem"]] == p, ]
     pred_p = predicted[predicted[["problem"]] == p, ]
 
+    # PeakError() needs plain data.frames (data.tables error inside it), and
+    # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
     reg_df = data.frame(
       chrom = rep("chr", nrow(reg_p)),
       chromStart = reg_p[["start"]],
@@ -277,7 +294,7 @@ cpt_errors_peak = function(sm, predicted, regions) {
 #'   [penaltyLearning::IntervalRegressionCV()] consumes.
 #' @noRd
 cpt_target_intervals = function(task, Kmax) {
-  problem = NULL
+  problem = NULL # silence the R CMD check / lintr note on the := columns
   label_type = task$label_type
   parts = cpt_extract_data(task)
   ids = parts$ids
@@ -293,11 +310,11 @@ cpt_target_intervals = function(task, Kmax) {
     ms[, problem := ids[i]]
     sm_list[[i]] = ms
 
-    if (nrow(path$predicted) > 0L) {
-      pr = as.data.table(path$predicted)
-      pr[, problem := ids[i]]
-      predicted_list[[i]] = pr
-    }
+    # Append even 0-row tables: they carry the branch-specific geometry columns,
+    # so rbindlist() keeps the schema when no sequence has any predicted change.
+    pr = as.data.table(path$predicted)
+    pr[, problem := ids[i]]
+    predicted_list[[i]] = pr
   }
 
   sm = rbindlist(sm_list)
@@ -314,4 +331,42 @@ cpt_target_intervals = function(task, Kmax) {
   target = as.matrix(ti[, c("min.log.lambda", "max.log.lambda")])
   rownames(target) = as.character(ids)
   target
+}
+
+#' Segment one sequence at a single learned penalty (predict-side)
+#'
+#' Rebuilds the same model path as training (`cpt_segment_path()`), maps each
+#' model to the penalty interval where it is optimal via
+#' [penaltyLearning::modelSelection()], and returns the model whose interval
+#' contains `log_lambda`. Re-solving the whole path just to read off one model
+#' is the accepted cost of the single-solver decision; a penalty-direct solver
+#' (e.g. PeakSegFPOP) is the future escape hatch if it bites.
+#'
+#' @param seq (`numeric()`)\cr One sequence signal.
+#' @param log_lambda (`numeric(1)`)\cr The penalty predicted by the regressor,
+#'   on the log(lambda) scale.
+#' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`; predict inherits the
+#'   training complexity cap, so a penalty implying more changes saturates.
+#' @param label_type (`character(1)`)\cr `"changepoint"` or `"peak"`.
+#' @return `list(complexity, predicted)`: the selected model's complexity and
+#'   its geometry rows from the path (zero rows = nothing detected).
+#' @noRd
+cpt_segment = function(seq, log_lambda, Kmax, label_type) {
+  path = cpt_segment_path(seq, Kmax, label_type)
+
+  ms = as.data.table(
+    penaltyLearning::modelSelection(as.data.frame(path$models), complexity = "complexity")
+  )
+
+  # The intervals tile (-Inf, Inf) half-open as [min, max), so exactly one
+  # model matches; <= on both ends would double-match at interval boundaries.
+  hit = ms[["min.log.lambda"]] <= log_lambda & log_lambda < ms[["max.log.lambda"]]
+  k = ms[["complexity"]][hit]
+
+  predicted = path$predicted[path$predicted[["complexity"]] == k, ]
+
+  list(
+    complexity = k,
+    predicted = predicted
+  )
 }
