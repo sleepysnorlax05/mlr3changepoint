@@ -122,3 +122,36 @@ For general questions about the mlr3 ecosystem, the
 [mlr3book](https://mlr3book.mlr-org.com/) and the
 [mlr-org community channels](https://stackoverflow.com/questions/tagged/mlr3) are good
 starting points.
+
+## Related Work
+
+Change point detection has a rich ecosystem in R. *mlr3changepoint* builds on and
+interfaces several of these packages rather than replacing them:
+
+- [changepoint](https://cran.r-project.org/package=changepoint) — mainstream and
+  specialised methods for detecting single and multiple change points (PELT, binary
+  segmentation, and more).
+- [binsegRcpp](https://cran.r-project.org/package=binsegRcpp) — efficient C++ binary
+  segmentation, log-linear on average and quadratic in the worst case.
+- [fpop](https://cran.r-project.org/package=fpop) — optimal partitioning with functional
+  pruning for fast segmentation of univariate signals into piecewise-constant profiles.
+- [dust](https://github.com/vrunge/dust) — optimal partitioning with the DUST
+  ("DUality Simple Test") pruning rule, a recent alternative to PELT and FPOP.
+- [penaltyLearning](https://cran.r-project.org/package=penaltyLearning) — supervised
+  penalty learning for change point detection, and the source of the labelled-region
+  (weak supervision) setup used here.
+- [rupturesRcpp](https://cran.r-project.org/package=rupturesRcpp) — object-oriented Rcpp
+  interface to popular offline change-point algorithms (an R counterpart to Python's
+  `ruptures`).
+- the **PeakSeg** family ([PeakSegOptimal](https://cran.r-project.org/package=PeakSegOptimal),
+  PeakSegDisk, PeakSegJoint) — optimal peak detection via up-down constrained changepoint
+  models, used for the `"peak"` label type.
+
+## Acknowledgements
+
+*mlr3changepoint* is developed as part of
+[Google Summer of Code 2026](https://summerofcode.withgoogle.com/) under the
+[R Project for Statistical Computing](https://www.r-project.org/). Special thanks to
+mentors Toby Hocking, Marc Becker and Tung Lam Nguyen for their guidance, and to the
+[mlr-org](https://github.com/mlr-org) team for designing and maintaining the mlr3
+ecosystem that this package extends.
