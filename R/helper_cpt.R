@@ -51,3 +51,47 @@ cpt_feature_matrix = function(parts, cols = NULL) {
   }
   feats[, cols, drop = FALSE]
 }
+
+cpt_path_changepoint = function(seq, Kmax) {
+  n = length(seq)
+
+  # L2 cost of a segmentation given its interior changepoints (segment ends).
+  seg_loss = function(ends) {
+    bounds = c(0L, ends, n)
+    starts = utils::head(bounds, -1L) + 1L
+    stops = bounds[-1L]
+    sum(vapply(seq_along(starts), function(j) {
+      v = seq[starts[j]:stops[j]]
+      sum((v - mean(v))^2)
+    }, numeric(1L)))
+  }
+
+  # Null model (no change) is always in the path.
+  models = data.table(complexity = 1L, loss = seg_loss(integer()))
+  predicted = data.table(complexity = integer(), change = numeric())
+
+  # SegNeigh errors when Q exceeds n - 2; clamp so a short sequence just yields a
+  # shorter path.
+  Q = min(as.integer(Kmax), n - 2L)
+  if (Q >= 1L) {
+    fit = withCallingHandlers(
+      changepoint::cpt.mean(seq, method = "SegNeigh", Q = Q, penalty = "None"),
+      warning = function(w) {
+        if (grepl("SegNeigh|number of segments identified", w$message)) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
+    # cpts.full(): row k holds the k changepoint positions of the (k + 1)-segment
+    # model, NA-padded to Q columns.
+    cps = changepoint::cpts.full(fit)
+    for (k in seq_len(nrow(cps))) {
+      ends = cps[k, ]
+      ends = ends[!is.na(ends)]
+      models = rbind(models, data.table(complexity = k + 1L, loss = seg_loss(ends)))
+      predicted = rbind(predicted, data.table(complexity = k + 1L, change = as.numeric(ends)))
+    }
+  }
+
+  list(models = models, predicted = predicted)
+}
