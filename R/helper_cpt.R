@@ -33,7 +33,7 @@ cpt_extract_data = function(task) {
 #' pass those stored `cols` back so the matrix matches the fitted model.
 #'
 #' @param parts (`list`)\cr
-#'   Output of `cpt_task_parts()`; uses `parts$sequence` and `parts$ids`.
+#'   Output of `cpt_extract_data()`; uses `parts$sequence` and `parts$ids`.
 #' @param cols (`character()` | `NULL`)\cr
 #'   `NULL` on train: compute the kept columns and return them. On predict: the
 #'   training column names to subset to.
@@ -62,7 +62,7 @@ cpt_feature_matrix = function(parts, cols = NULL) {
 #' - `predicted`: the detected changes/peaks, one row per model change, keyed by
 #'   the same `complexity`. Columns are branch-specific (`change` for
 #'   changepoint; `chromStart`/`chromEnd` for peak) because the downstream error
-#'   function ([cpt_model_errors]) is the branch point that reads them.
+#'   function (`cpt_model_errors()`) is the branch point that reads them.
 #'
 #' @param seq (`numeric()`)\cr One sequence signal.
 #' @param Kmax (`integer(1)`)\cr Maximum number of changes (changepoint) or peaks
@@ -183,7 +183,7 @@ cpt_path_peak = function(seq, Kmax) {
 #'   across problems, carrying `problem`, `complexity`, `min.log.lambda`,
 #'   `max.log.lambda`.
 #' @param predicted (`data.table`)\cr Combined `predicted` geometry across
-#'   problems (see [cpt_segment_path]), keyed by `problem` and `complexity`.
+#'   problems (see `cpt_segment_path()`), keyed by `problem` and `complexity`.
 #' @param regions (`data.table`)\cr Combined labels across problems, columns
 #'   `problem`, `start`, `end`, `label`.
 #' @param label_type (`character(1)`)\cr `"changepoint"` or `"peak"`.
@@ -263,14 +263,14 @@ cpt_errors_peak = function(sm, predicted, regions) {
 #' Compute the log(penalty) target interval matrix for a TaskCpt
 #'
 #' The train-time label pipeline, tying the helpers together: fit the model
-#' path per sequence ([cpt_segment_path]), attach each model's selectable
+#' path per sequence (`cpt_segment_path()`), attach each model's selectable
 #' penalty interval via [penaltyLearning::modelSelection()], score the models
-#' against the labels ([cpt_model_errors]), and invert the error curves with
+#' against the labels (`cpt_model_errors()`), and invert the error curves with
 #' [penaltyLearning::targetIntervals()] into the interval of log(lambda)
 #' values reaching minimal label error per sequence.
 #'
 #' @param task ([TaskCpt]).
-#' @param Kmax (`integer(1)`)\cr See [cpt_segment_path].
+#' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`.
 #' @return A numeric matrix, one row per sequence aligned to `task$row_ids`
 #'   (`rownames` set to the sequence ids), columns `min.log.lambda` and
 #'   `max.log.lambda`: the `target.mat` shape
