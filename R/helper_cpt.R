@@ -52,6 +52,8 @@ cpt_feature_matrix = function(parts, cols = NULL) {
   feats[, cols, drop = FALSE]
 }
 
+#' Mean-change path via `changepoint::cpt.mean(method = "SegNeigh")`
+#' @noRd
 cpt_path_changepoint = function(seq, Kmax) {
   n = length(seq)
 
@@ -92,6 +94,49 @@ cpt_path_changepoint = function(seq, Kmax) {
       predicted = rbind(predicted, data.table(complexity = k + 1L, change = as.numeric(ends)))
     }
   }
+
+  list(models = models, predicted = predicted)
+}
+
+#' Peak path via `PeakSegOptimal::PeakSegPDPAchrom()`
+#' @noRd
+cpt_path_peak = function(seq, Kmax) {
+  count = as.integer(round(seq))
+  if (any(count < 0L)) {
+    stop("peak detection requires non-negative counts")
+  }
+  n = length(count)
+
+  count.df = data.table::data.table(
+    count = count,
+    chromStart = 0:(n - 1L),
+    chromEnd = 1:n
+  )
+
+  fit = PeakSegOptimal::PeakSegPDPAchrom(
+    count.df, max.peaks = as.integer(Kmax)
+  )
+  loss = data.table::as.data.table(fit$loss)
+  segs = data.table::as.data.table(fit$segments)
+
+  # The PDPA path includes equality-constrained infeasible models; drop them
+  # before model selection.
+  loss = loss[loss[["feasible"]], ]
+  keep = loss[["peaks"]]
+
+  is_peak = segs[["status"]] == "peak" & segs[["peaks"]] %in% keep
+  peakseg = segs[is_peak, ]
+
+  models = data.table::data.table(
+    complexity = loss[["peaks"]],
+    loss = loss[["PoissonLoss"]]
+  )
+
+  predicted = data.table::data.table(
+    complexity = peakseg[["peaks"]],
+    chromStart = peakseg[["chromStart"]],
+    chromEnd = peakseg[["chromEnd"]]
+  )
 
   list(models = models, predicted = predicted)
 }
