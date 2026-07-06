@@ -3,7 +3,7 @@
 #' @param task ([TaskCpt]).
 #' @return A named `list(ids, sequence, target)`, each aligned to `task$row_ids`.
 #' @noRd
-cpt_task_parts = function(task) {
+cpt_extract_data = function(task) {
   seq_col = task$col_roles$sequence
   target_col = task$target_names
   id_col = task$backend$primary_key
