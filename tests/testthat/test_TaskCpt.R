@@ -9,8 +9,8 @@ test_that("construction works", {
 
 test_that("sequence column role is set", {
   task = toy()
-  expect_equal(task$col_roles$sequence, "seq")
-  expect_true("seq" %nin% task$col_roles$feature)
+  expect_equal(task$col_roles$sequence, "signal")
+  expect_true("signal" %nin% task$col_roles$feature)
   expect_equal(task$col_roles$target, "label")
 })
 
