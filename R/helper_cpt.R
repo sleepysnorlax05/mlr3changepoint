@@ -95,7 +95,7 @@ cpt_path_changepoint = function(seq, Kmax) {
   # L2 cost of a segmentation given its interior changepoints (segment ends).
   seg_loss = function(ends) {
     bounds = c(0L, ends, n)
-    starts = utils::head(bounds, -1L) + 1L
+    starts = head(bounds, -1L) + 1L
     stops = bounds[-1L]
     sum(vapply(
       seq_along(starts),
