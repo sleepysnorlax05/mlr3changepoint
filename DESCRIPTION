@@ -27,7 +27,8 @@ Suggests:
     PeakError,
     PeakSegOptimal,
     penaltyLearning,
-    testthat (>= 3.3.0)
+    testthat (>= 3.3.0),
+    withr
 Remotes:
     mlr-org/mlr3,
     mlr-org/paradox,
