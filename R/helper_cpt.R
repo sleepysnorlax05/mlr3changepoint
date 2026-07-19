@@ -321,7 +321,8 @@ cpt_target_intervals = function(task, Kmax) {
   predicted = rbindlist(predicted_list)
   regions = rbindlist(Map(
     function(id, tab) data.table(problem = id, tab),
-    ids, parts$target
+    ids,
+    parts$target
   ))
 
   me = cpt_model_errors(sm, predicted, regions, label_type)
@@ -338,9 +339,7 @@ cpt_target_intervals = function(task, Kmax) {
 #' Rebuilds the same model path as training (`cpt_segment_path()`), maps each
 #' model to the penalty interval where it is optimal via
 #' [penaltyLearning::modelSelection()], and returns the model whose interval
-#' contains `log_lambda`. Re-solving the whole path just to read off one model
-#' is the accepted cost of the single-solver decision; a penalty-direct solver
-#' (e.g. PeakSegFPOP) is the future escape hatch if it bites.
+#' contains `log_lambda`.
 #'
 #' @param seq (`numeric()`)\cr One sequence signal.
 #' @param log_lambda (`numeric(1)`)\cr The penalty predicted by the regressor,
