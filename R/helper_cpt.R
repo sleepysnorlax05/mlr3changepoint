@@ -108,8 +108,8 @@ cpt_path_changepoint = function(seq, Kmax) {
   }
 
   # Null model (no change) is always in the path.
-  models = data.table(complexity = 1L, loss = seg_loss(integer()))
-  predicted = data.table(complexity = integer(), change = numeric())
+  models = list(data.table(complexity = 1L, loss = seg_loss(integer())))
+  predicted = list(data.table(complexity = integer(), change = numeric()))
 
   # SegNeigh errors when Q exceeds n - 2; clamp so a short sequence just yields a
   # shorter path.
@@ -129,12 +129,12 @@ cpt_path_changepoint = function(seq, Kmax) {
     for (k in seq_len(nrow(cps))) {
       ends = cps[k, ]
       ends = ends[!is.na(ends)]
-      models = rbind(models, data.table(complexity = k + 1L, loss = seg_loss(ends)))
-      predicted = rbind(predicted, data.table(complexity = k + 1L, change = as.numeric(ends)))
+      models[[k + 1L]] = data.table(complexity = k + 1L, loss = seg_loss(ends))
+      predicted[[k + 1L]] = data.table(complexity = k + 1L, change = as.numeric(ends))
     }
   }
 
-  list(models = models, predicted = predicted)
+  list(models = rbindlist(models), predicted = rbindlist(predicted))
 }
 
 #' Peak path via `PeakSegOptimal::PeakSegPDPAchrom()`
