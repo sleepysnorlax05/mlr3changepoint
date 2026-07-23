@@ -24,6 +24,77 @@ toy = function(label_type = "changepoint") {
   )
 }
 
+#' Larger toy task for learner-level tests.
+#'
+#' `toy()` / `toy_peak()` carry two sequences, which is enough to exercise the
+#' cpt_* helpers but not a learner: IntervalRegressionCV needs at least
+#' `min.observations` rows, and every CV fold needs at least one finite lower
+#' and one finite upper limit. Labelled sequences give a finite upper limit only
+#' and unlabelled-change ones a finite lower limit only, so the two kinds are
+#' alternated to keep both present in any fold split.
+toy_many = function(label_type = "changepoint", n_pairs = 6L) {
+  backend = with_seed(36, { # nolint: object_usage_linter.
+    parts = lapply(seq_len(n_pairs), function(i) {
+      if (label_type == "peak") {
+        # Poisson counts: PeakSegPDPAchrom needs non-negative integers.
+        with_peak = c(rpois(60, 2), rpois(40, 20 + i), rpois(100, 2))
+        flat = rpois(200, 2)
+        list(
+          signal = list(with_peak, flat),
+          label = list(
+            data.table::data.table(
+              start = c(1, 55),
+              end = c(50, 105),
+              label = c("noPeaks", "peaks")
+            ),
+            data.table::data.table(start = 10, end = 190, label = "noPeaks")
+          )
+        )
+      } else {
+        with_change = c(rnorm(100, 10 + i), rnorm(100, 30 + i))
+        flat = rnorm(200, i)
+        list(
+          signal = list(with_change, flat),
+          label = list(
+            # Two labels: the 1change region bounds the penalty from above, the
+            # flat 0changes region bounds it from below, so this row carries a
+            # finite limit on both ends and any fold split stays solvable.
+            data.table::data.table(
+              start = c(90, 130),
+              end = c(110, 190),
+              label = c("1change", "0changes")
+            ),
+            data.table::data.table(start = 1, end = 200, label = "0changes")
+          )
+        )
+      }
+    })
+    data.table::data.table(
+      signal = unlist(lapply(parts, `[[`, "signal"), recursive = FALSE),
+      label = unlist(lapply(parts, `[[`, "label"), recursive = FALSE)
+    )
+  })
+  TaskCpt$new(
+    id = "toy_many",
+    backend = backend,
+    target = "label",
+    sequence = "signal",
+    label_type = label_type
+  )
+}
+
+#' Fold assignment that keeps both bound types in every fold.
+#'
+#' `toy_many()` alternates labelled and flat sequences, so consecutive rows
+#' carry opposite bound types. Striping folds across that alternation
+#' (`1,2,3,1,2,3,...`) gives every fold a mix; the random default `fold.vec`
+#' can put same-kind rows together and then IntervalRegressionCV aborts with
+#' "some folds have no upper/lower limits". Pass this together with
+#' `n.folds = 3` whenever training on `toy_many()`.
+toy_many_folds = function(task, n_folds = 3L) {
+  rep(seq_len(n_folds), length.out = task$nrow)
+}
+
 toy_peak = function() {
   backend = with_seed(36, { # nolint: object_usage_linter.
     data.table::data.table(
