@@ -1,5 +1,5 @@
 toy = function(label_type = "changepoint") {
-  backend = withr::with_seed(36, {
+  backend = with_seed(36, { # nolint: object_usage_linter.
     data.table::data.table(
       signal = list(
         c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9)),
@@ -25,7 +25,7 @@ toy = function(label_type = "changepoint") {
 }
 
 toy_peak = function() {
-  backend = withr::with_seed(36, {
+  backend = with_seed(36, { # nolint: object_usage_linter.
     data.table::data.table(
       signal = list(
         c(rpois(60, 2), rpois(40, 25), rpois(100, 2)),
