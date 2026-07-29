@@ -33,3 +33,20 @@ is_missing_prediction_data.PredictionDataCpt = function(pdata, ...) {
   }
   pdata$row_ids[miss]
 }
+
+#' @export
+filter_prediction_data.PredictionDataCpt = function(pdata, row_ids, ...) {
+  keep = pdata$row_ids %in% row_ids
+
+  if (!is.null(pdata$truth)) {
+    pdata$truth = pdata$truth[keep]
+  }
+
+  if (!is.null(pdata$response)) {
+    pdata$response = pdata$response[keep]
+  }
+
+  pdata$row_ids = pdata$row_ids[keep]
+
+  pdata
+}
