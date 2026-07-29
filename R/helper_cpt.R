@@ -68,29 +68,29 @@ cpt_feature_matrix = function(parts, cols = NULL) {
 #'   changepoint; `chromStart`/`chromEnd` for peak) because the downstream error
 #'   function (`cpt_model_errors()`) is the branch point that reads them.
 #'
-#' @param seq (`numeric()`)\cr One sequence signal.
+#' @param signal (`numeric()`)\cr One sequence signal.
 #' @param Kmax (`integer(1)`)\cr Maximum number of changes (changepoint) or peaks
 #'   (peak) to search for; caps model complexity for both train and predict.
 #' @param label_type (`character(1)`)\cr `"changepoint"` or `"peak"`.
 #' @return `list(models, predicted)` as described above.
 #' @noRd
-cpt_segment_path = function(seq, Kmax, label_type) {
+cpt_segment_path = function(signal, Kmax, label_type) {
   # Both solvers fail with obscure errors on missing values; catch that here once.
-  if (anyNA(seq)) {
+  if (anyNA(signal)) {
     stopf("sequence contains missing values")
   }
   switch(
     label_type,
-    changepoint = cpt_path_changepoint(seq, Kmax),
-    peak = cpt_path_peak(seq, Kmax),
+    changepoint = cpt_path_changepoint(signal, Kmax),
+    peak = cpt_path_peak(signal, Kmax),
     stopf("unknown label_type: %s", label_type)
   )
 }
 
 #' Mean-change path via `changepoint::cpt.mean(method = "SegNeigh")`
 #' @noRd
-cpt_path_changepoint = function(seq, Kmax) {
-  n = length(seq)
+cpt_path_changepoint = function(signal, Kmax) {
+  n = length(signal)
 
   # L2 cost of a segmentation given its interior changepoints (segment ends).
   seg_loss = function(ends) {
@@ -100,7 +100,7 @@ cpt_path_changepoint = function(seq, Kmax) {
     sum(vapply(
       seq_along(starts),
       function(j) {
-        v = seq[starts[j]:stops[j]]
+        v = signal[starts[j]:stops[j]]
         sum((v - mean(v))^2)
       },
       numeric(1L)
@@ -116,7 +116,7 @@ cpt_path_changepoint = function(seq, Kmax) {
   Q = min(as.integer(Kmax), n - 2L)
   if (Q >= 1L) {
     fit = withCallingHandlers(
-      changepoint::cpt.mean(seq, method = "SegNeigh", Q = Q, penalty = "None"),
+      changepoint::cpt.mean(signal, method = "SegNeigh", Q = Q, penalty = "None"),
       warning = function(w) {
         if (grepl("SegNeigh|number of segments identified", w$message)) {
           invokeRestart("muffleWarning")
@@ -139,13 +139,13 @@ cpt_path_changepoint = function(seq, Kmax) {
 
 #' Peak path via `PeakSegOptimal::PeakSegPDPAchrom()`
 #' @noRd
-cpt_path_peak = function(seq, Kmax) {
+cpt_path_peak = function(signal, Kmax) {
   # PeakSegPDPA models Poisson counts: reject real-valued or negative input
   # instead of silently rounding it into a different dataset.
-  if (any(seq != round(seq))) {
+  if (any(signal != round(signal))) {
     stopf("peak detection requires integer counts")
   }
-  count = as.integer(seq)
+  count = as.integer(signal)
   if (any(count < 0L)) {
     stopf("peak detection requires non-negative counts")
   }
@@ -341,7 +341,7 @@ cpt_target_intervals = function(task, Kmax) {
 #' [penaltyLearning::modelSelection()], and returns the model whose interval
 #' contains `log_lambda`.
 #'
-#' @param seq (`numeric()`)\cr One sequence signal.
+#' @param signal (`numeric()`)\cr One sequence signal.
 #' @param log_lambda (`numeric(1)`)\cr The penalty predicted by the regressor,
 #'   on the log(lambda) scale.
 #' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`; predict inherits the
@@ -350,8 +350,8 @@ cpt_target_intervals = function(task, Kmax) {
 #' @return `list(complexity, predicted)`: the selected model's complexity and
 #'   its geometry rows from the path (zero rows = nothing detected).
 #' @noRd
-cpt_segment = function(seq, log_lambda, Kmax, label_type) {
-  path = cpt_segment_path(seq, Kmax, label_type)
+cpt_segment = function(signal, log_lambda, Kmax, label_type) {
+  path = cpt_segment_path(signal, Kmax, label_type)
 
   ms = as.data.table(
     penaltyLearning::modelSelection(as.data.frame(path$models), complexity = "complexity")

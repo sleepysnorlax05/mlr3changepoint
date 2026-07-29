@@ -154,7 +154,7 @@ test_that("sequences too short for any change still get targets", {
   skip_if_not_installed("penaltyLearning")
 
   backend = data.table::data.table(
-    seq = list(rnorm(2), rnorm(2)),
+    signal = list(rnorm(2), rnorm(2)),
     label = list(
       data.table::data.table(start = 1, end = 2, label = "0changes"),
       data.table::data.table(start = 1, end = 2, label = "0changes")
@@ -164,7 +164,7 @@ test_that("sequences too short for any change still get targets", {
     id = "degenerate",
     backend = backend,
     target = "label",
-    sequence = "seq",
+    sequence = "signal",
     label_type = "changepoint"
   )
 
