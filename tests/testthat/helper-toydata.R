@@ -83,18 +83,6 @@ toy_many = function(label_type = "changepoint", n_pairs = 6L) {
   )
 }
 
-#' Fold assignment that keeps both bound types in every fold.
-#'
-#' `toy_many()` alternates labelled and flat sequences, so consecutive rows
-#' carry opposite bound types. Striping folds across that alternation
-#' (`1,2,3,1,2,3,...`) gives every fold a mix; the random default `fold.vec`
-#' can put same-kind rows together and then IntervalRegressionCV aborts with
-#' "some folds have no upper/lower limits". Pass this together with
-#' `n.folds = 3` whenever training on `toy_many()`.
-toy_many_folds = function(task, n_folds = 3L) {
-  rep(seq_len(n_folds), length.out = task$nrow)
-}
-
 toy_peak = function() {
   backend = with_seed(36, { # nolint: object_usage_linter.
     data.table::data.table(
