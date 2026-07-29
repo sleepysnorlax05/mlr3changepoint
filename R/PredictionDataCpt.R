@@ -16,3 +16,11 @@ create_empty_prediction_data.TaskCpt = function(task, learner) {
   class(parts) = c("PredictionDataCpt", "PredictionData")
   parts
 }
+
+#' @export
+check_prediction_data.PredictionDataCpt = function(pdata, ...) {
+  n = length(assert_row_ids(pdata$row_ids))
+  assert_list(pdata$truth, types = "data.table", len = n, any.missing = FALSE, null.ok = TRUE)
+  assert_numeric(pdata$response, len = n, any.missing = FALSE, null.ok = TRUE)
+  pdata
+}
