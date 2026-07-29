@@ -25,7 +25,7 @@ LearnerCptIntRegrCV = R6::R6Class(
             })
           ),
           factor.regularization = p_dbl(lower = 1, default = 1.2, special_vals = list(NULL), tags = "train"),
-          Kmax = p_int(lower = 2L, tags = c("train", "predict", "required"))
+          Kmax = p_int(lower = 2L, tags = c("train", "required"))
         ),
         packages = "penaltyLearning",
         label = "Cross-Validated Interval Regression",
@@ -42,19 +42,21 @@ LearnerCptIntRegrCV = R6::R6Class(
       pv$Kmax = NULL
 
       parts = cpt_extract_data(task)
-      feature.mat = cpt_feature_matrix(parts)
-      target.mat = cpt_target_intervals(task, Kmax)
+      feature_mat = cpt_feature_matrix(parts)
+      target_mat = cpt_target_intervals(task, Kmax)
 
       fit = invoke(
         penaltyLearning::IntervalRegressionCV,
-        feature.mat = feature.mat,
-        target.mat = target.mat,
+        feature.mat = feature_mat,
+        target.mat = target_mat,
         .args = pv
       )
 
       list(
         fit = fit,
-        feature_names = colnames(feature.mat)
+        feature_names = colnames(feature_mat),
+        Kmax = Kmax,
+        label_type = task$label_type
       )
     }
   )
