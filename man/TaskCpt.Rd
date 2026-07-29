@@ -74,6 +74,7 @@ The type of labels, either "changepoint" or "peak".}
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-TaskCpt-new}{\code{TaskCpt$new()}}
+\item \href{#method-TaskCpt-truth}{\code{TaskCpt$truth()}}
 \item \href{#method-TaskCpt-clone}{\code{TaskCpt$clone()}}
 }
 }
@@ -100,7 +101,6 @@ The type of labels, either "changepoint" or "peak".}
 <li><span class="pkg-link" data-pkg="mlr3" data-topic="Task" data-id="set_col_roles"><a href='../../mlr3/html/Task.html#method-Task-set_col_roles'><code>mlr3::Task$set_col_roles()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="mlr3" data-topic="Task" data-id="set_levels"><a href='../../mlr3/html/Task.html#method-Task-set_levels'><code>mlr3::Task$set_levels()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="mlr3" data-topic="Task" data-id="set_row_roles"><a href='../../mlr3/html/Task.html#method-Task-set_row_roles'><code>mlr3::Task$set_row_roles()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="mlr3" data-topic="TaskSupervised" data-id="truth"><a href='../../mlr3/html/TaskSupervised.html#method-TaskSupervised-truth'><code>mlr3::TaskSupervised$truth()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -142,6 +142,29 @@ The type of labels, either "changepoint" or "peak".}
 Display name for the task.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-TaskCpt-truth"></a>}}
+\if{latex}{\out{\hypertarget{method-TaskCpt-truth}{}}}
+\subsection{Method \code{truth()}}{
+True labels for the specified \code{row_ids}, one entry per sequence.
+Defaults to all rows with role \code{"use"}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{TaskCpt$truth(rows = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{rows}}{(positive \code{integer()})\cr
+Vector of row indices.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A \code{list()} of \code{\link[data.table:data.table]{data.table::data.table()}}s, each with columns
+\code{start}, \code{end} and \code{label}.
 }
 }
 \if{html}{\out{<hr>}}

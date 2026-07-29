@@ -90,6 +90,18 @@ TaskCpt = R6::R6Class(
       )
       self$col_roles$sequence = sequence
       self$col_roles$feature = setdiff(self$col_roles$feature, sequence)
+    },
+
+    #' @description
+    #' True labels for the specified `row_ids`, one entry per sequence.
+    #' Defaults to all rows with role `"use"`.
+    #'
+    #' @param rows (positive `integer()`)\cr
+    #'  Vector of row indices.
+    #' @return A `list()` of [data.table::data.table()]s, each with columns
+    #'  `start`, `end` and `label`.
+    truth = function(rows = NULL) {
+      super$truth(rows)[[1L]]
     }
   ),
 
