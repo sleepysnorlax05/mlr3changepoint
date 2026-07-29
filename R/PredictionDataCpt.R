@@ -24,3 +24,12 @@ check_prediction_data.PredictionDataCpt = function(pdata, ...) {
   assert_numeric(pdata$response, len = n, any.missing = FALSE, null.ok = TRUE)
   pdata
 }
+
+#' @export
+is_missing_prediction_data.PredictionDataCpt = function(pdata, ...) {
+  miss = logical(length(pdata$row_ids))
+  if (!is.null(pdata$response)) {
+    miss = miss | is.na(pdata$response)
+  }
+  pdata$row_ids[miss]
+}

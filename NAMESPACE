@@ -2,6 +2,7 @@
 
 S3method(check_prediction_data,PredictionDataCpt)
 S3method(create_empty_prediction_data,TaskCpt)
+S3method(is_missing_prediction_data,PredictionDataCpt)
 export(LearnerCpt)
 export(TaskCpt)
 import(checkmate)
