@@ -50,3 +50,15 @@ filter_prediction_data.PredictionDataCpt = function(pdata, row_ids, ...) {
 
   pdata
 }
+
+#' @export
+c.PredictionDataCpt = function(..., keep_duplicates = TRUE) {
+  dots = list(...)
+
+  if (length(dots) == 0L) {
+    return(create_empty_prediction_data.TaskCpt())
+  }
+
+  assert_list(dots, "PredictionDataCpt")
+  assert()
+}
