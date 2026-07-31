@@ -95,16 +95,14 @@ cpt_path_changepoint = function(signal, Kmax) {
   # L2 cost of a segmentation given its interior changepoints (segment ends).
   seg_loss = function(ends) {
     bounds = c(0L, ends, n)
-    starts = head(bounds, -1L) + 1L
-    stops = bounds[-1L]
-    sum(vapply(
-      seq_along(starts),
-      function(j) {
-        v = signal[starts[j]:stops[j]]
-        sum((v - mean(v))^2)
-      },
-      numeric(1L)
-    ))
+    total = 0
+    for (j in seq_len(length(bounds) - 1)) {
+      start = bounds[j] + 1
+      stop = bounds[j + 1]
+      v = signal[start:stop]
+      total = total + sum((v - mean(v))^2)
+    }
+    total
   }
 
   # Null model (no change) is always in the path.
