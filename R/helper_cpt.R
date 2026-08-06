@@ -42,15 +42,26 @@ cpt_extract_data = function(task) {
 #'   and columns the kept feature set.
 #' @noRd
 cpt_feature_matrix = function(parts, cols = NULL) {
-  feats = do.call(rbind, lapply(parts$sequence, penaltyLearning::featureVector))
-  rownames(feats) = parts$ids
+  n_sequence = length(parts$sequence)
+  feats = NULL
+
+  for (i in seq_len(n_sequence)) {
+    fv = penaltyLearning::featureVector(parts$sequence[[i]])
+    if (is.null(feats)) {
+      feats = matrix(NA_real_, nrow = n_sequence, ncol = length(fv), dimnames = list(NULL, names(fv)))
+    }
+    feats[i, ] = fv
+  }
 
   if (is.null(cols)) {
-    finite = apply(feats, 2L, function(x) all(is.finite(x)))
-    varies = apply(feats, 2L, function(x) length(unique(x)) > 1L)
-    cols = colnames(feats)[finite & varies]
+    keep = logical(ncol(feats))
+    for (j in seq_len(ncol(feats))) {
+      col = feats[, j]
+      keep[j] = all(is.finite(col)) && (max(col) != min(col))
+    }
+    cols = colnames(feats)[keep]
     if (length(cols) == 0L) {
-      stopf("no usable features: every feature column is non-finite or constant across sequences")
+      stopf("no usable features: all columns are non-finite or constant")
     }
   }
   feats[, cols, drop = FALSE]
