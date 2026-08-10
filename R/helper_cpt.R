@@ -113,9 +113,9 @@ cpt_path_changepoint = function(signal, Kmax) {
     bounds = c(0L, ends, n)
     total = 0
     for (j in seq_len(length(bounds) - 1)) {
-      start = bounds[j] + 1
-      stop = bounds[j + 1]
-      v = signal[start:stop]
+      from = bounds[j] + 1
+      to = bounds[j + 1]
+      v = signal[from:to]
       total = total + sum((v - mean(v))^2)
     }
     total
