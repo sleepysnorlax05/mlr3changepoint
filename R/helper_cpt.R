@@ -48,7 +48,12 @@ cpt_feature_matrix = function(parts, cols = NULL) {
   for (i in seq_len(n_sequence)) {
     fv = penaltyLearning::featureVector(parts$sequence[[i]])
     if (is.null(feats)) {
-      feats = matrix(NA_real_, nrow = n_sequence, ncol = length(fv), dimnames = list(NULL, names(fv)))
+      feats = matrix(
+        NA_real_,
+        nrow = n_sequence,
+        ncol = length(fv),
+        dimnames = list(as.character(parts$ids), names(fv))
+      )
     }
     feats[i, ] = fv
   }
