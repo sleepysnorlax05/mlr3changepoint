@@ -250,9 +250,9 @@ cpt_errors_changepoint = function(sm, predicted, regions) {
 #' sum fp/fn across regions, then attach each model's log.lambda interval.
 #' @noRd
 cpt_errors_peak = function(sm, predicted, regions) {
-  # PeakError coordinates: chromStart 0-based, chromEnd 1-based. The mapping from
-  # TaskCpt (start, end) is passed through here; the region convention is a task
-  # design decision, not this helper's to reinterpret.
+  # TaskCpt labels are 1-based inclusive; PeakError wants bed-style coordinates
+  # (chromStart 0-based, chromEnd 1-based exclusive), so start shifts by -1 and
+  # end passes through. Predicted peaks are already bed-style from cpt_path_peak().
   out = lapply(unique(sm[["problem"]]), function(p) {
     sm_p = sm[sm[["problem"]] == p, ]
     reg_p = regions[regions[["problem"]] == p, ]
@@ -262,7 +262,7 @@ cpt_errors_peak = function(sm, predicted, regions) {
     # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
     reg_df = data.frame(
       chrom = rep("chr", nrow(reg_p)),
-      chromStart = reg_p[["start"]],
+      chromStart = reg_p[["start"]] - 1L,
       chromEnd = reg_p[["end"]],
       annotation = reg_p[["label"]]
     )
