@@ -227,3 +227,28 @@ test_that("peak segmentation returns peak geometry at a small penalty", {
   expect_equal(res0$complexity, 0L)
   expect_equal(nrow(res0$predicted), 0L)
 })
+
+test_that("peak label starts are converted to 0-based for PeakError", {
+  skip_if_not_installed("PeakError")
+
+  # One 1-peak model: peak occupies bed [4, 8) = 1-based bases 5..8.
+  sm = data.table(
+    problem = 1L,
+    complexity = 1L,
+    min.log.lambda = -Inf,
+    max.log.lambda = Inf
+  )
+  predicted = data.table(
+    problem = 1L,
+    complexity = 1L,
+    chromStart = 4L,
+    chromEnd = 8L
+  )
+  # "peaks" label on 1-based [8, 10]: bed [7, 10) touches the peak's last base
+  # only after the -1 shift; unshifted [8, 10) misses it entirely.
+  regions = data.table(problem = 1L, start = 8L, end = 10L, label = "peaks")
+
+  res = cpt_errors_peak(sm, predicted, regions)
+  expect_equal(res$fn, 0L) # fn = 1 before the fix
+  expect_equal(res$errors, 0L)
+})
