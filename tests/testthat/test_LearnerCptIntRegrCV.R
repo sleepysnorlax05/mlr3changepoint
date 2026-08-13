@@ -46,3 +46,17 @@ test_that("resampling combines fold predictions", {
   rr = with_seed(36, resample(task, learner, rsmp("holdout")))
   expect_prediction(rr$prediction())
 })
+
+test_that("the learner handles peak tasks", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("PeakSegOptimal")
+  skip_if_not_installed("PeakError")
+
+  task = toy_peak_interval()
+  learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
+  with_seed(36, learner$train(task))
+  expect_equal(learner$model$label_type, "peak")
+
+  p = learner$predict(task)
+  expect_numeric(p$response, len = task$nrow, any.missing = FALSE)
+})
