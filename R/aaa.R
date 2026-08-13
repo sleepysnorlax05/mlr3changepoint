@@ -40,4 +40,5 @@ register_reflections = function() {
 
 register_mlr3 = function() {
   register_reflections()
+  register_learners()
 }
