@@ -44,3 +44,25 @@ test_that("missing responses are reported by row id", {
   p = PredictionCpt$new(task = task, response = c(1.5, NA))
   expect_equal(p$missing, task$row_ids[2L])
 })
+
+test_that("empty prediction data starts blank", {
+  task = toy()
+  learner = LearnerCpt$new(id = "test")
+  pdata = create_empty_prediction_data(task, learner)
+
+  expect_s3_class(pdata, "PredictionDataCpt")
+  expect_equal(pdata$row_ids, integer())
+  expect_equal(pdata$response, numeric())
+  expect_equal(is_missing_prediction_data(pdata), integer())
+})
+
+test_that("c() passes a single element through and rejects mixed types", {
+  task = toy()
+  p = PredictionCpt$new(task = task, response = c(1.5, 2.5))
+
+  expect_identical(c(p$data), p$data)
+
+  bare = p$data
+  bare$response = NULL
+  expect_error(c(p$data, bare), "different")
+})
