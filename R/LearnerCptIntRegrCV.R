@@ -111,6 +111,16 @@ LearnerCptIntRegrCV = R6::R6Class(
         Kmax = Kmax,
         label_type = task$label_type
       )
+    },
+
+    .predict = function(task) {
+      parts = cpt_extract_data(task)
+      # Replay the train-time feature columns: recomputing the non-finite/constant
+      # drop on test data could keep a different set than the fitted weights expect.
+      feature_mat = cpt_feature_matrix(parts, cols = self$model$feature_names)
+      # predict.IntervalRegression returns an n x 1 matrix of log(penalty).
+      pred = predict(self$model$fit, feature_mat)
+      list(response = as.numeric(pred))
     }
   )
 )
