@@ -1,3 +1,4 @@
+# nocov start
 register_reflections = function() {
   x = utils::getFromNamespace("mlr_reflections", "mlr3")
 
@@ -42,3 +43,4 @@ register_mlr3 = function() {
   register_reflections()
   register_learners()
 }
+# nocov end

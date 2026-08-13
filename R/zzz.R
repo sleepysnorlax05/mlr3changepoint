@@ -6,6 +6,7 @@
 #' @importFrom R6 R6Class
 "_PACKAGE"
 
+# nocov start
 .onLoad = function(libname, pkgname) {
   register_namespace_callback(pkgname, "mlr3", register_mlr3)
 }
@@ -36,3 +37,4 @@ unregister_mlr3_reflections = function() {
   x$learner_properties$changepoint = NULL
   x$learner_predict_types$changepoint = NULL
 }
+# nocov end
