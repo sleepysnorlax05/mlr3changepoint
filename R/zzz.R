@@ -11,7 +11,18 @@
 }
 
 .onUnload = function(libpath) {
+  unregister_learners()
   unregister_mlr3_reflections()
+}
+
+register_learners = function() {
+  x = utils::getFromNamespace("mlr_learners", "mlr3")
+  x$add("changepoint.intregrcv", function() LearnerCptIntRegrCV$new())
+}
+
+unregister_learners = function() {
+  x = utils::getFromNamespace("mlr_learners", "mlr3")
+  x$remove("changepoint.intregrcv")
 }
 
 unregister_mlr3_reflections = function() {
