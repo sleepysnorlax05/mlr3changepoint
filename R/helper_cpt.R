@@ -375,6 +375,27 @@ cpt_target_intervals = function(task, Kmax) {
   target
 }
 
+#' Flag the [penaltyLearning::modelSelection()] rows selected at a penalty
+#'
+#' The intervals tile `(-Inf, Inf)` half-open as `[min, max)`, so exactly one
+#' model per problem matches; `<=` on both ends would double-match at an
+#' interval boundary. Predict and scoring must apply the identical rule or the
+#' reported error belongs to a different model than the one predicted, hence
+#' the one shared definition.
+#'
+#' `log_lambda` is recycled, so it takes either a single penalty against one
+#' problem's models, or a column of per-row penalties from a joined table.
+#'
+#' @param ms (`data.table`)\cr
+#'   [penaltyLearning::modelSelection()] output, columns `min.log.lambda` and
+#'   `max.log.lambda`.
+#' @param log_lambda (`numeric()`)\cr Penalty on the log(lambda) scale.
+#' @return A `logical()` vector, one element per row of `ms`.
+#' @noRd
+cpt_is_selected = function(ms, log_lambda) {
+  ms[["min.log.lambda"]] <= log_lambda & log_lambda < ms[["max.log.lambda"]]
+}
+
 #' Segment one sequence at a single learned penalty (predict-side)
 #'
 #' Rebuilds the same model path as training (`cpt_segment_path()`), maps each
@@ -398,9 +419,13 @@ cpt_segment = function(signal, log_lambda, Kmax, label_type) {
     penaltyLearning::modelSelection(as.data.frame(path$models), complexity = "complexity")
   )
 
-  # The intervals tile (-Inf, Inf) half-open as [min, max), so exactly one
-  # model matches; <= on both ends would double-match at interval boundaries.
-  hit = ms[["min.log.lambda"]] <= log_lambda & log_lambda < ms[["max.log.lambda"]]
+  hit = cpt_is_selected(ms, log_lambda)
+  # A non-finite penalty (a degenerate regression fit, or +Inf, which no
+  # half-open interval contains) matches nothing; say so instead of returning
+  # an empty segmentation.
+  if (sum(hit, na.rm = TRUE) != 1L) {
+    stopf("no model selected at log(lambda) = %s", format(log_lambda))
+  }
   k = ms[["complexity"]][hit]
 
   predicted = path$predicted[path$predicted[["complexity"]] == k, ]
