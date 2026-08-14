@@ -63,6 +63,14 @@ is_missing_prediction_data.PredictionDataCpt = function(pdata, ...) {
 filter_prediction_data.PredictionDataCpt = function(pdata, row_ids, ...) {
   keep = pdata$row_ids %in% row_ids
 
+  if (!is.null(pdata$weights)) {
+    pdata$weights = pdata$weights[keep]
+  }
+
+  if (!is.null(pdata$extra)) {
+    pdata$extra = map(pdata$extra, function(x) x[keep])
+  }
+
   if (!is.null(pdata$truth)) {
     pdata$truth = pdata$truth[keep]
   }
