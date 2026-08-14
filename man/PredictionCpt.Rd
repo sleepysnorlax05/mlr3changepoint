@@ -75,7 +75,10 @@ Creates a new instance of this \link[R6:R6Class]{R6} class.
   row_ids = task$row_ids,
   truth = task$truth(row_ids),
   response = NULL,
-  check = TRUE
+  weights = NULL,
+  check = TRUE,
+  extra = NULL,
+  raw = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -95,8 +98,19 @@ True label regions, one \code{data.table(start, end, label)} per observation.}
 Predicted penalty \code{log(lambda)}.
 One element for each observation in the test set.}
 
+\item{\code{weights}}{(\code{numeric()})\cr
+Measure weights, one for each observation in the test set.
+Constructed from the \code{weights_measure} column of the \link{TaskCpt}, if present.}
+
 \item{\code{check}}{(\code{logical(1)})\cr
 If \code{TRUE}, performs some argument checks and predict type conversions.}
+
+\item{\code{extra}}{(\code{list()})\cr
+Named list of extra data to store alongside the predictions.
+Each element must have one entry per observation in the test set.}
+
+\item{\code{raw}}{(any)\cr
+Raw prediction object from the upstream model. Stored as-is, without validation.}
 }
 \if{html}{\out{</div>}}
 }

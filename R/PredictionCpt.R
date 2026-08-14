@@ -47,19 +47,33 @@ PredictionCpt = R6::R6Class(
     #' @param response (`numeric()`)\cr
     #'  Predicted penalty `log(lambda)`.
     #'  One element for each observation in the test set.
+    #' @param weights (`numeric()`)\cr
+    #'  Measure weights, one for each observation in the test set.
+    #'  Constructed from the `weights_measure` column of the [TaskCpt], if present.
     #' @param check (`logical(1)`)\cr
     #'  If `TRUE`, performs some argument checks and predict type conversions.
+    #' @param extra (`list()`)\cr
+    #'  Named list of extra data to store alongside the predictions.
+    #'  Each element must have one entry per observation in the test set.
+    #' @param raw (any)\cr
+    #'  Raw prediction object from the upstream model. Stored as-is, without validation.
     initialize = function(
       task = NULL,
       row_ids = task$row_ids,
       truth = task$truth(row_ids),
       response = NULL,
-      check = TRUE
+      weights = NULL,
+      check = TRUE,
+      extra = NULL,
+      raw = NULL
     ) {
       pdata = list(
         row_ids = row_ids,
         truth = truth,
-        response = response
+        response = response,
+        weights = weights,
+        extra = extra,
+        raw = raw
       )
       pdata = discard(pdata, is.null)
       class(pdata) = c("PredictionDataCpt", "PredictionData")
@@ -87,5 +101,15 @@ PredictionCpt = R6::R6Class(
 
 #' @export
 as.data.table.PredictionCpt = function(x, ...) {
-  data.table(row_ids = x$data$row_ids, truth = x$data$truth, response = x$response)
+  tab = data.table(row_ids = x$data$row_ids, truth = x$data$truth, response = x$response)
+
+  if (!is.null(x$data$weights)) {
+    tab$weights = x$data$weights
+  }
+
+  if (!is.null(x$data$extra)) {
+    tab = cbind(tab, as.data.table(x$data$extra))
+  }
+
+  tab
 }
