@@ -1,19 +1,24 @@
 #' Extract row-aligned sequence/target parts from a TaskCpt
 #'
 #' @param task ([TaskCpt]).
-#' @return A named `list(ids, sequence, target)`, each aligned to `task$row_ids`.
+#' @param rows (`integer()`)\cr
+#'   Row ids to extract, defaulting to every row with role `"use"`. Scoring a
+#'   prediction only touches the test rows, so the caller passes those here.
+#' @return A named `list(ids, sequence, target)`, each aligned to `rows`.
 #' @noRd
-cpt_extract_data = function(task) {
+cpt_extract_data = function(task, rows = task$row_ids) {
+  assert_subset(rows, task$row_ids)
+
   seq_col = task$col_roles$sequence
   target_col = task$target_names
   id_col = task$backend$primary_key
 
   dt = task$backend$data(
-    rows = task$row_ids,
+    rows = rows,
     cols = c(seq_col, target_col, id_col)
   )
-  # Backends do not guarantee row order; realign to task$row_ids.
-  dt = dt[match(task$row_ids, dt[[id_col]]), ]
+  # Backends do not guarantee row order; realign to the requested rows.
+  dt = dt[match(rows, dt[[id_col]]), ]
 
   ids = dt[[id_col]]
   sequence = dt[[seq_col]]
