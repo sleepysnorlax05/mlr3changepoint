@@ -19,9 +19,34 @@ create_empty_prediction_data.TaskCpt = function(task, learner) {
 
 #' @export
 check_prediction_data.PredictionDataCpt = function(pdata, ...) {
-  n = length(assert_row_ids(pdata$row_ids))
-  assert_list(pdata$truth, types = "data.table", len = n, any.missing = FALSE, null.ok = TRUE)
-  assert_numeric(pdata$response, len = n, null.ok = TRUE)
+  pdata$row_ids = assert_row_ids(pdata$row_ids)
+  n = length(pdata$row_ids)
+
+  if (!is.null(pdata$truth)) {
+    assert_list(pdata$truth, types = "data.table", len = n, any.missing = FALSE)
+    for (i in seq_along(pdata$truth)) {
+      tt = pdata$truth[[i]]
+      assert_names(names(tt), must.include = c("start", "end", "label"))
+      assert_numeric(tt$start, any.missing = FALSE, .var.name = "start")
+      assert_numeric(tt$end, any.missing = FALSE, .var.name = "end")
+      if (!all(tt$start <= tt$end)) {
+        stopf("Label region %d has invalid coordinates (start > end).", i)
+      }
+    }
+  }
+
+  if (!is.null(pdata$response)) {
+    pdata$response = assert_numeric(unname(pdata$response), len = n)
+  }
+  if (!is.null(pdata$weights)) {
+    pdata$weights = assert_numeric(unname(pdata$weights), any.missing = FALSE, len = n)
+  }
+  if (!is.null(pdata$extra)) {
+    assert_list(pdata$extra, names = "unique")
+    if (any(lengths(pdata$extra) != n)) {
+      stopf("All elements of 'extra' must have length %i (number of predictions).", n)
+    }
+  }
   pdata
 }
 
