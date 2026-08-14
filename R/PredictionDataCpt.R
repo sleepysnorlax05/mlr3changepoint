@@ -13,6 +13,10 @@ create_empty_prediction_data.TaskCpt = function(task, learner) {
     stopf("Unknown predict_type '%s'", learner$predict_type)
   }
 
+  if ("weights_measure" %chin% task$properties) {
+    parts$weights = numeric()
+  }
+
   class(parts) = c("PredictionDataCpt", "PredictionData")
   parts
 }
@@ -97,22 +101,49 @@ c.PredictionDataCpt = function(..., keep_duplicates = TRUE) {
     intersect(names(x), names(mlr_reflections$learner_predict_types$changepoint))
   })
 
-  if (length(unique(types)) > 1) {
+  if (!every(types[-1L], setequal, y = types[[1L]])) {
     stopf("Cannot combine PredictionDataCpt objects with different types.")
+  }
+
+  # An optional field must be present in all or none: filling it silently would
+  # misalign it against row_ids.
+  for (field in c("truth", "weights", "extra")) {
+    if (length(unique(map_lgl(dots, function(x) is.null(x[[field]])))) > 1L) {
+      stopf("Cannot combine PredictionDataCpt objects: some have '%s', others do not.", field)
+    }
   }
 
   row_ids = unlist(map(dots, "row_ids"))
   truth = do.call(c, map(dots, "truth"))
   response = unlist(map(dots, "response"))
+  weights = unlist(map(dots, "weights"))
+  # extra is column-wise: a named list of vectors, one element per prediction.
+  extra = if (!is.null(dots[[1L]]$extra)) {
+    as.list(rbindlist(map(dots, "extra"), fill = TRUE, use.names = TRUE))
+  }
 
   if (!keep_duplicates) {
     keep = !duplicated(row_ids, fromLast = TRUE)
     row_ids = row_ids[keep]
     truth = truth[keep]
     response = response[keep]
+    weights = weights[keep]
+    # map() on NULL returns an empty list, which would survive the discard below.
+    if (!is.null(extra)) {
+      extra = map(extra, function(x) x[keep])
+    }
   }
 
-  pdata = discard(list(row_ids = row_ids, truth = truth, response = response), is.null)
+  # The raw model outputs are collected, not concatenated: one entry per object.
+  raw = discard(map(dots, "raw"), is.null)
+
+  pdata = discard(
+    list(row_ids = row_ids, truth = truth, response = response, weights = weights, extra = extra),
+    is.null
+  )
+  if (length(raw)) {
+    pdata$raw = raw
+  }
   class(pdata) = c("PredictionDataCpt", "PredictionData")
   pdata
 }
