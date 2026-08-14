@@ -318,26 +318,28 @@ cpt_errors_peak = function(sm, predicted, regions) {
   }, by = "problem"]
 }
 
-#' Compute the log(penalty) target interval matrix for a TaskCpt
+#' Score every model of every sequence against its labels
 #'
-#' The train-time label pipeline, tying the helpers together: fit the model
-#' path per sequence (`cpt_segment_path()`), attach each model's selectable
-#' penalty interval via [penaltyLearning::modelSelection()], score the models
-#' against the labels (`cpt_model_errors()`), and invert the error curves with
-#' [penaltyLearning::targetIntervals()] into the interval of log(lambda)
-#' values reaching minimal label error per sequence.
+#' The label pipeline up to, but not including, the target intervals: fit the
+#' model path per sequence (`cpt_segment_path()`), attach each model's
+#' selectable penalty interval via [penaltyLearning::modelSelection()], and
+#' score the whole path against the label regions (`cpt_model_errors()`).
+#'
+#' Train inverts this error curve into target intervals; a measure instead
+#' reads off the row selected by the predicted penalty. Both need this table,
+#' so it is computed in one place rather than recomputed per caller.
 #'
 #' @param task ([TaskCpt]).
 #' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`.
-#' @return A numeric matrix, one row per sequence aligned to `task$row_ids`
-#'   (`rownames` set to the sequence ids), columns `min.log.lambda` and
-#'   `max.log.lambda`: the `target.mat` shape
-#'   [penaltyLearning::IntervalRegressionCV()] consumes.
+#' @param rows (`integer()`)\cr
+#'   Row ids to score, defaulting to every row with role `"use"`.
+#' @return A `data.table` in the canonical `model.errors` schema, one row per
+#'   model per sequence, keyed by `problem` (the row id).
 #' @noRd
-cpt_target_intervals = function(task, Kmax) {
+cpt_label_errors = function(task, Kmax, rows = task$row_ids) {
   problem = NULL # silence the R CMD check / lintr note on the := columns
   label_type = task$label_type
-  parts = cpt_extract_data(task)
+  parts = cpt_extract_data(task, rows)
   ids = parts$ids
 
   sm_list = list()
@@ -366,7 +368,27 @@ cpt_target_intervals = function(task, Kmax) {
     parts$target
   ))
 
-  me = cpt_model_errors(sm, predicted, regions, label_type)
+  cpt_model_errors(sm, predicted, regions, label_type)
+}
+
+#' Compute the log(penalty) target interval matrix for a TaskCpt
+#'
+#' The train-time label pipeline: score every model against the labels
+#' (`cpt_label_errors()`), then invert the error curves with
+#' [penaltyLearning::targetIntervals()] into the interval of log(lambda)
+#' values reaching minimal label error per sequence.
+#'
+#' @param task ([TaskCpt]).
+#' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`.
+#' @return A numeric matrix, one row per sequence aligned to `task$row_ids`
+#'   (`rownames` set to the sequence ids), columns `min.log.lambda` and
+#'   `max.log.lambda`: the `target.mat` shape
+#'   [penaltyLearning::IntervalRegressionCV()] consumes.
+#' @noRd
+cpt_target_intervals = function(task, Kmax) {
+  ids = task$row_ids
+
+  me = cpt_label_errors(task, Kmax, ids)
   ti = as.data.table(penaltyLearning::targetIntervals(me, problem.vars = "problem"))
 
   ti = ti[match(ids, ti$problem), ]
