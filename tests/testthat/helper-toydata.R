@@ -49,3 +49,10 @@ toy_peak = function() {
     label_type = "peak"
   )
 }
+
+toy_weighted = function() {
+  task = toy()
+  task$cbind(data.table::data.table(w = c(1, 2)))
+  task$set_col_roles("w", roles = "weights_measure")
+  task
+}
