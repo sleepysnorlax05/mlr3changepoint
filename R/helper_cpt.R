@@ -250,13 +250,13 @@ cpt_errors_changepoint = function(sm, predicted, regions) {
 #' sum fp/fn across regions, then attach each model's log.lambda interval.
 #' @noRd
 cpt_errors_peak = function(sm, predicted, regions) {
-  # TaskCpt labels are 1-based inclusive; PeakError wants bed-style coordinates
-  # (chromStart 0-based, chromEnd 1-based exclusive), so start shifts by -1 and
-  # end passes through. Predicted peaks are already bed-style from cpt_path_peak().
-  out = lapply(unique(sm[["problem"]]), function(p) {
-    sm_p = sm[sm[["problem"]] == p, ]
-    reg_p = regions[regions[["problem"]] == p, ]
-    pred_p = predicted[predicted[["problem"]] == p, ]
+  # PeakError coordinates: chromStart 0-based, chromEnd 1-based. The mapping from
+  # TaskCpt (start, end) is passed through here; the region convention is a task
+  # design decision, not this helper's to reinterpret.
+  sm[, {
+    cx = .SD[["complexity"]]
+    reg_p = regions[regions[["problem"]] == .BY$problem, ]
+    pred_p = predicted[predicted[["problem"]] == .BY$problem, ]
 
     # PeakError() needs plain data.frames (data.tables error inside it), and
     # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
@@ -267,28 +267,29 @@ cpt_errors_peak = function(sm, predicted, regions) {
       annotation = reg_p[["label"]]
     )
 
-    rows = lapply(seq_len(nrow(sm_p)), function(i) {
-      cx = sm_p[["complexity"]][i]
-      pk = pred_p[pred_p[["complexity"]] == cx, ]
+    fp = integer(.N)
+    fn = integer(.N)
+    for (i in seq_len(.N)) {
+      pk = pred_p[pred_p[["complexity"]] == cx[i], ]
       peak_df = data.frame(
         chrom = rep("chr", nrow(pk)),
         chromStart = pk[["chromStart"]],
         chromEnd = pk[["chromEnd"]]
       )
       pe = PeakError::PeakError(peak_df, reg_df)
-      data.table(
-        problem = p,
-        complexity = cx,
-        min.log.lambda = sm_p[["min.log.lambda"]][i],
-        max.log.lambda = sm_p[["max.log.lambda"]][i],
-        fp = sum(pe$fp),
-        fn = sum(pe$fn),
-        errors = sum(pe$fp) + sum(pe$fn)
-      )
-    })
-    rbindlist(rows)
-  })
-  rbindlist(out)
+      fp[i] = sum(pe$fp)
+      fn[i] = sum(pe$fn)
+    }
+
+    list(
+      complexity = cx,
+      min.log.lambda = .SD[["min.log.lambda"]],
+      max.log.lambda = .SD[["max.log.lambda"]],
+      fp = fp,
+      fn = fn,
+      errors = fp + fn
+    )
+  }, by = "problem"]
 }
 
 #' Compute the log(penalty) target interval matrix for a TaskCpt
