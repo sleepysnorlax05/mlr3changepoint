@@ -279,43 +279,46 @@ cpt_errors_peak = function(sm, predicted, regions) {
   # PeakError coordinates: chromStart 0-based, chromEnd 1-based. The mapping from
   # TaskCpt (start, end) is passed through here; the region convention is a task
   # design decision, not this helper's to reinterpret.
-  sm[, {
-    cx = .SD[["complexity"]]
-    reg_p = regions[regions[["problem"]] == .BY$problem, ]
-    pred_p = predicted[predicted[["problem"]] == .BY$problem, ]
+  sm[,
+    {
+      cx = .SD[["complexity"]]
+      reg_p = regions[regions[["problem"]] == .BY$problem, ]
+      pred_p = predicted[predicted[["problem"]] == .BY$problem, ]
 
-    # PeakError() needs plain data.frames (data.tables error inside it), and
-    # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
-    reg_df = data.frame(
-      chrom = rep("chr", nrow(reg_p)),
-      chromStart = reg_p[["start"]] - 1L,
-      chromEnd = reg_p[["end"]],
-      annotation = reg_p[["label"]]
-    )
-
-    fp = integer(.N)
-    fn = integer(.N)
-    for (i in seq_len(.N)) {
-      pk = pred_p[pred_p[["complexity"]] == cx[i], ]
-      peak_df = data.frame(
-        chrom = rep("chr", nrow(pk)),
-        chromStart = pk[["chromStart"]],
-        chromEnd = pk[["chromEnd"]]
+      # PeakError() needs plain data.frames (data.tables error inside it), and
+      # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
+      reg_df = data.frame(
+        chrom = rep("chr", nrow(reg_p)),
+        chromStart = reg_p[["start"]] - 1L,
+        chromEnd = reg_p[["end"]],
+        annotation = reg_p[["label"]]
       )
-      pe = PeakError::PeakError(peak_df, reg_df)
-      fp[i] = sum(pe$fp)
-      fn[i] = sum(pe$fn)
-    }
 
-    list(
-      complexity = cx,
-      min.log.lambda = .SD[["min.log.lambda"]],
-      max.log.lambda = .SD[["max.log.lambda"]],
-      fp = fp,
-      fn = fn,
-      errors = fp + fn
-    )
-  }, by = "problem"]
+      fp = integer(.N)
+      fn = integer(.N)
+      for (i in seq_len(.N)) {
+        pk = pred_p[pred_p[["complexity"]] == cx[i], ]
+        peak_df = data.frame(
+          chrom = rep("chr", nrow(pk)),
+          chromStart = pk[["chromStart"]],
+          chromEnd = pk[["chromEnd"]]
+        )
+        pe = PeakError::PeakError(peak_df, reg_df)
+        fp[i] = sum(pe$fp)
+        fn[i] = sum(pe$fn)
+      }
+
+      list(
+        complexity = cx,
+        min.log.lambda = .SD[["min.log.lambda"]],
+        max.log.lambda = .SD[["max.log.lambda"]],
+        fp = fp,
+        fn = fn,
+        errors = fp + fn
+      )
+    },
+    by = "problem"
+  ]
 }
 
 #' Score every model of every sequence against its labels
