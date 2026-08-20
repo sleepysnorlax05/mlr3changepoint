@@ -83,7 +83,7 @@ plot_cpt = function(task, Kmax = 3L) {
       aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf, fill = .data[["label"]]),
       alpha = 0.3
     ) +
-    geom_line(data = seq_dt, aes(t, value), linewidth = 0.3) +
+    geom_line(data = seq_dt, aes(t, .data[["value"]]), linewidth = 0.3) +
     geom_vline(data = mark_dt, aes(xintercept = .data[["x"]]), linetype = "dashed") +
     facet_wrap(~row, ncol = 2, scales = "free_y") +
     labs(
