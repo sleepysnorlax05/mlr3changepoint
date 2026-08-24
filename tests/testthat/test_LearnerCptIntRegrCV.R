@@ -11,9 +11,9 @@ test_that("train and predict round trip", {
 
   task = toy_interval()
   learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
-  # IntervalRegressionCV samples its internal folds; the seed keeps every fold
-  # holding both a lower and an upper target limit, which the solver requires.
-  with_seed(36, learner$train(task))
+  # Training is seed-independent: the learner builds deterministic stratified CV
+  # folds, so every fold carries both a lower and an upper target limit.
+  learner$train(task)
   expect_setequal(
     names(learner$model),
     c("fit", "feature_names", "Kmax", "label_type")
@@ -31,7 +31,7 @@ test_that("predict works on unseen rows via the stored feature columns", {
 
   task = toy_interval()
   learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
-  with_seed(36, learner$train(task$clone()$filter(1:8)))
+  learner$train(task$clone()$filter(1:8))
 
   p = learner$predict(task$clone()$filter(9:10))
   expect_numeric(p$response, len = 2L, any.missing = FALSE)
@@ -54,7 +54,7 @@ test_that("the learner handles peak tasks", {
 
   task = toy_peak_interval()
   learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
-  with_seed(36, learner$train(task))
+  learner$train(task)
   expect_equal(learner$model$label_type, "peak")
 
   p = learner$predict(task)
@@ -68,4 +68,16 @@ test_that("predict rejects a task with a different label_type", {
   learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
   learner$train(toy_interval())
   expect_error(learner$predict(toy_peak_interval()), "label_type")
+})
+
+test_that("training is stable across seeds", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  task = toy_interval()
+  learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
+  # Deterministic stratified folds: the predicted penalties must not depend on the seed.
+  r1 = with_seed(1L, learner$train(task)$predict(task)$response)
+  r2 = with_seed(999L, learner$train(task)$predict(task)$response)
+  expect_equal(r1, r2)
 })

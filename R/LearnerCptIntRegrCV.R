@@ -115,6 +115,33 @@ LearnerCptIntRegrCV = R6::R6Class(
       feature_mat = cpt_feature_matrix(parts)
       target_mat = cpt_target_intervals(task, Kmax)
 
+      # Deterministic, stratified CV folds. IntervalRegressionCV defaults fold.vec
+      # to sample(), so on small or imbalanced data an unlucky draw can hand a fold
+      # no finite upper (or lower) target limit, which the interval-regression loss
+      # cannot fit. Grouping rows by their (finite min, finite max) signature and
+      # round-robining each group spreads both limit kinds across every fold, so
+      # training no longer depends on the RNG seed. Rebuilt per train call from the
+      # current rows, so it stays the right length under resampling, unlike the
+      # user-facing fold.vec that was dropped for that reason.
+      has_upper = any(is.finite(target_mat[, "max.log.lambda"]))
+      has_lower = any(is.finite(target_mat[, "min.log.lambda"]))
+      if (!has_upper || !has_lower) {
+        limit = if (has_upper) "lower" else "upper"
+        stopf("labels give no finite %s penalty limit; need both bounded and open target intervals", limit)
+      }
+      n_folds = pv$n.folds %??% if (nrow(feature_mat) < 10L) 3L else 5L
+      pv$n.folds = NULL
+      sig = paste(
+        is.finite(target_mat[, "min.log.lambda"]),
+        is.finite(target_mat[, "max.log.lambda"])
+      )
+      fold_vec = integer(nrow(target_mat))
+      for (g in unique(sig)) {
+        idx = which(sig == g)
+        fold_vec[idx] = rep_len(seq_len(n_folds), length(idx))
+      }
+      pv$fold.vec = fold_vec
+
       fit = invoke(
         penaltyLearning::IntervalRegressionCV,
         feature.mat = feature_mat,
