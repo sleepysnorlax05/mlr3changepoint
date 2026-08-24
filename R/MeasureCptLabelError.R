@@ -1,5 +1,7 @@
 #' @title Label-error changepoint measure
 #'
+#' @name mlr_measures_changepoint.label_error
+#'
 #' @description
 #' Percentage of label regions the predicted segmentation gets wrong: the total
 #' false positives plus false negatives across all sequences, divided by the
@@ -20,7 +22,12 @@
 #' rather than averaging per-sequence rates. The mlr3 `average` argument is the
 #' orthogonal resampling-iteration axis and stays at its default.
 #'
-#' @templateVar id changepoint.label_error
+#' @section Dictionary:
+#' This measure can be retrieved via [mlr3::mlr_measures] with the key
+#' `"changepoint.label_error"`:
+#' ```
+#' msr("changepoint.label_error")
+#' ```
 #'
 #' @family Measure
 #' @export
@@ -38,7 +45,7 @@ MeasureCptLabelError = R6::R6Class(
         properties = c("requires_task", "requires_learner", "weights"),
         packages = "penaltyLearning",
         label = "Label Error",
-        man = "mlr3changepoint::MeasureCptLabelError"
+        man = "mlr3changepoint::mlr_measures_changepoint.label_error"
       )
     }
   ),
