@@ -25,7 +25,7 @@ test_that("invalid label_type errors", {
 
 test_that("truth returns the label tables", {
   truth = toy()$truth()
-  expect_list(truth$label, len = 2L)
+  expect_list(truth, len = 2L, types = "data.table")
 })
 
 test_that("clone preserves label_type", {
