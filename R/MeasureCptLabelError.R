@@ -30,6 +30,43 @@
 #' ```
 #'
 #' @family Measure
+#'
+#' @examples
+#' library(data.table)
+#'
+#' # Alternate change-bearing and flat sequences so the learner's internal
+#' # cross-validation folds always see both target interval kinds.
+#' set.seed(36)
+#' signal = vector("list", 10L)
+#' label = vector("list", 10L)
+#' for (i in 1:10) {
+#'   if (i %% 2 == 1) {
+#'     signal[[i]] = c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9))
+#'     label[[i]] = data.table(
+#'       start = c(90, 190), end = c(110, 210), label = c("1change", "1change")
+#'     )
+#'   } else {
+#'     signal[[i]] = rnorm(100, 0)
+#'     label[[i]] = data.table(start = 1, end = 100, label = "0changes")
+#'   }
+#' }
+#' task = TaskCpt$new(
+#'   id = "toy", backend = data.table(signal = signal, label = label),
+#'   target = "label", sequence = "signal", label_type = "changepoint"
+#' )
+#'
+#' learner = lrn("changepoint.intregrcv",
+#'   Kmax = 3L, n.folds = 2L, min.observations = 2L
+#' )
+#' \donttest{
+#' set.seed(36)
+#' learner$train(task)
+#' prediction = learner$predict(task)
+#' prediction$score(
+#'   msr("changepoint.label_error"), task = task, learner = learner
+#' )
+#' }
+#'
 #' @export
 MeasureCptLabelError = R6::R6Class(
   "MeasureCptLabelError",
