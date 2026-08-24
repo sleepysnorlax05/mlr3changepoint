@@ -46,44 +46,34 @@ MeasureCptLabelError = R6::R6Class(
     .score = function(prediction, task, learner, weights = NULL, ...) {
       rows = prediction$row_ids
       response = prediction$response
-      # mlr3 passes `weights` here (from prediction$weights) because the measure
-      # declares the "weights" property; it is NULL when unweighted.
       weights = weights %??% rep(1, length(rows))
 
       if (length(rows) == 0L) {
         return(NA_real_)
       }
-      # A non-finite penalty lands in no half-open [min, max) interval, so it
-      # selects no model and there is nothing to score.
       if (any(!is.finite(response))) {
         return(NA_real_)
       }
 
-      # Kmax from the hyperparameter, never learner$model$Kmax: reading the model
-      # would force the "requires_model" property and break the default
-      # resample(store_models = FALSE).
       Kmax = learner$param_set$values$Kmax
-
-      # One row per model per sequence; attach each sequence's predicted penalty
-      # and keep the model that penalty selects (the intervals tile (-Inf, Inf)
-      # half-open, so exactly one model per sequence matches).
       me = cpt_label_errors(task, Kmax, rows)
       me$log_lambda = response[match(me$problem, rows)]
       sel = me[cpt_is_selected(me, me$log_lambda), ]
 
-      # A missed or duplicated selection is a bug in the shared selection rule,
-      # not a result to average over.
       if (!setequal(sel$problem, rows) || anyDuplicated(sel$problem)) {
         stopf(
           "label-error scoring selected %i models for %i sequences",
-          nrow(sel), length(rows)
+          nrow(sel),
+          length(rows)
         )
       }
 
       errors = sel$errors[match(rows, sel$problem)]
-      n_labels = vapply(prediction$truth, nrow, integer(1))
+      n_labels = integer(length(rows))
+      for (i in seq_along(rows)) {
+        n_labels[i] = nrow(prediction$truth[[i]])
+      }
 
-      # Micro-average: weight by label count, not per-sequence rate.
       denom = sum(weights * n_labels)
       if (denom == 0) {
         return(NA_real_)
