@@ -88,7 +88,7 @@ LearnerCptIntRegrCV = R6::R6Class(
           Kmax = p_int(lower = 2L, tags = c("train", "required"))
         ),
         feature_types = "list",
-        packages = "penaltyLearning",
+        packages = c("penaltyLearning", "changepoint", "PeakSegOptimal", "PeakError"),
         label = "Cross-Validated Interval Regression",
         man = "mlr3changepoint::mlr_learners_changepoint.intregrcv"
       )
