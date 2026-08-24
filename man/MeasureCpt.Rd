@@ -14,6 +14,10 @@ A changepoint measure scores a \link{PredictionCpt}, whose \code{response} is th
 the sequences and the complexity cap they were fitted under, so a measure will usually declare
 the \code{"requires_task"} and \code{"requires_learner"} properties and read \code{Kmax} from the learner.
 }
+\seealso{
+Other Measure: 
+\code{\link{mlr_measures_changepoint.label_error}}
+}
 \concept{Measure}
 \section{Super class}{
 \code{\link[mlr3:Measure]{mlr3::Measure}} -> \code{MeasureCpt}
