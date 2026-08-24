@@ -122,6 +122,7 @@ LearnerCptIntRegrCV = R6::R6Class(
     },
 
     .predict = function(task) {
+      cpt_assert_model_label_type(task, self$model)
       parts = cpt_extract_data(task)
       # Replay the train-time feature columns: recomputing the non-finite/constant
       # drop on test data could keep a different set than the fitted weights expect.

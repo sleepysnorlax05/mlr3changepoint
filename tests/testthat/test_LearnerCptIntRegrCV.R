@@ -60,3 +60,12 @@ test_that("the learner handles peak tasks", {
   p = learner$predict(task)
   expect_numeric(p$response, len = task$nrow, any.missing = FALSE)
 })
+
+test_that("predict rejects a task with a different label_type", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
+  learner$train(toy_interval())
+  expect_error(learner$predict(toy_peak_interval()), "label_type")
+})

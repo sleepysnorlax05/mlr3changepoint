@@ -21,6 +21,27 @@ cpt_extract_data = function(task) {
   list(ids = ids, sequence = sequence, target = target)
 }
 
+#' Guard that a prediction task's label_type matches the trained model
+#'
+#' The whole model (features, learned penalty, and the solver that reads the
+#' penalty) is specific to the label_type it was trained on, so predicting on a
+#' task with a different label_type would return a silently meaningless penalty.
+#' Fail fast with a clear message instead.
+#'
+#' @param task ([TaskCpt]).
+#' @param model (`list`)\cr A trained learner's `$model`, carrying `label_type`.
+#' @return `invisible(NULL)`; called for the side effect of erroring on mismatch.
+#' @noRd
+cpt_assert_model_label_type = function(task, model) {
+  if (task$label_type != model$label_type) {
+    stopf(
+      "learner was trained on label_type '%s' but the task has label_type '%s'",
+      model$label_type,
+      task$label_type
+    )
+  }
+}
+
 
 #' Build the per-sequence feature matrix for a TaskCpt
 #'
