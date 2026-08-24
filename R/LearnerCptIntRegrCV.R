@@ -26,6 +26,15 @@
 #' lrn("changepoint.intregrcv")
 #' ```
 #'
+#' @section Parameters:
+#' `Kmax` (`integer(1)`, required) caps model complexity: the maximum number of
+#' changepoints (`label_type = "changepoint"`) or peaks (`label_type = "peak"`)
+#' the per-sequence segment path is searched over, applied identically at train
+#' and predict time. The learner consumes it to build the target penalty
+#' intervals; it is not forwarded to the solver. The remaining parameters are
+#' passed to [penaltyLearning::IntervalRegressionCV()]; see there for their
+#' meaning and defaults.
+#'
 #' @family Learner
 #'
 #' @examples
