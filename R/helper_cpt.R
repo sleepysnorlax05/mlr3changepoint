@@ -1,19 +1,24 @@
 #' Extract row-aligned sequence/target parts from a TaskCpt
 #'
 #' @param task ([TaskCpt]).
-#' @return A named `list(ids, sequence, target)`, each aligned to `task$row_ids`.
+#' @param rows (`integer()`)\cr
+#'   Row ids to extract, defaulting to every row with role `"use"`. Scoring a
+#'   prediction only touches the test rows, so the caller passes those here.
+#' @return A named `list(ids, sequence, target)`, each aligned to `rows`.
 #' @noRd
-cpt_extract_data = function(task) {
+cpt_extract_data = function(task, rows = task$row_ids) {
+  assert_subset(rows, task$row_ids)
+
   seq_col = task$col_roles$sequence
   target_col = task$target_names
   id_col = task$backend$primary_key
 
   dt = task$backend$data(
-    rows = task$row_ids,
+    rows = rows,
     cols = c(seq_col, target_col, id_col)
   )
-  # Backends do not guarantee row order; realign to task$row_ids.
-  dt = dt[match(task$row_ids, dt[[id_col]]), ]
+  # Backends do not guarantee row order; realign to the requested rows.
+  dt = dt[match(rows, dt[[id_col]]), ]
 
   ids = dt[[id_col]]
   sequence = dt[[seq_col]]
@@ -274,65 +279,70 @@ cpt_errors_peak = function(sm, predicted, regions) {
   # PeakError coordinates: chromStart 0-based, chromEnd 1-based. The mapping from
   # TaskCpt (start, end) is passed through here; the region convention is a task
   # design decision, not this helper's to reinterpret.
-  sm[, {
-    cx = .SD[["complexity"]]
-    reg_p = regions[regions[["problem"]] == .BY$problem, ]
-    pred_p = predicted[predicted[["problem"]] == .BY$problem, ]
+  sm[,
+    {
+      cx = .SD[["complexity"]]
+      reg_p = regions[regions[["problem"]] == .BY$problem, ]
+      pred_p = predicted[predicted[["problem"]] == .BY$problem, ]
 
-    # PeakError() needs plain data.frames (data.tables error inside it), and
-    # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
-    reg_df = data.frame(
-      chrom = rep("chr", nrow(reg_p)),
-      chromStart = reg_p[["start"]] - 1L,
-      chromEnd = reg_p[["end"]],
-      annotation = reg_p[["label"]]
-    )
-
-    fp = integer(.N)
-    fn = integer(.N)
-    for (i in seq_len(.N)) {
-      pk = pred_p[pred_p[["complexity"]] == cx[i], ]
-      peak_df = data.frame(
-        chrom = rep("chr", nrow(pk)),
-        chromStart = pk[["chromStart"]],
-        chromEnd = pk[["chromEnd"]]
+      # PeakError() needs plain data.frames (data.tables error inside it), and
+      # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
+      reg_df = data.frame(
+        chrom = rep("chr", nrow(reg_p)),
+        chromStart = reg_p[["start"]] - 1L,
+        chromEnd = reg_p[["end"]],
+        annotation = reg_p[["label"]]
       )
-      pe = PeakError::PeakError(peak_df, reg_df)
-      fp[i] = sum(pe$fp)
-      fn[i] = sum(pe$fn)
-    }
 
-    list(
-      complexity = cx,
-      min.log.lambda = .SD[["min.log.lambda"]],
-      max.log.lambda = .SD[["max.log.lambda"]],
-      fp = fp,
-      fn = fn,
-      errors = fp + fn
-    )
-  }, by = "problem"]
+      fp = integer(.N)
+      fn = integer(.N)
+      for (i in seq_len(.N)) {
+        pk = pred_p[pred_p[["complexity"]] == cx[i], ]
+        peak_df = data.frame(
+          chrom = rep("chr", nrow(pk)),
+          chromStart = pk[["chromStart"]],
+          chromEnd = pk[["chromEnd"]]
+        )
+        pe = PeakError::PeakError(peak_df, reg_df)
+        fp[i] = sum(pe$fp)
+        fn[i] = sum(pe$fn)
+      }
+
+      list(
+        complexity = cx,
+        min.log.lambda = .SD[["min.log.lambda"]],
+        max.log.lambda = .SD[["max.log.lambda"]],
+        fp = fp,
+        fn = fn,
+        errors = fp + fn
+      )
+    },
+    by = "problem"
+  ]
 }
 
-#' Compute the log(penalty) target interval matrix for a TaskCpt
+#' Score every model of every sequence against its labels
 #'
-#' The train-time label pipeline, tying the helpers together: fit the model
-#' path per sequence (`cpt_segment_path()`), attach each model's selectable
-#' penalty interval via [penaltyLearning::modelSelection()], score the models
-#' against the labels (`cpt_model_errors()`), and invert the error curves with
-#' [penaltyLearning::targetIntervals()] into the interval of log(lambda)
-#' values reaching minimal label error per sequence.
+#' The label pipeline up to, but not including, the target intervals: fit the
+#' model path per sequence (`cpt_segment_path()`), attach each model's
+#' selectable penalty interval via [penaltyLearning::modelSelection()], and
+#' score the whole path against the label regions (`cpt_model_errors()`).
+#'
+#' Train inverts this error curve into target intervals; a measure instead
+#' reads off the row selected by the predicted penalty. Both need this table,
+#' so it is computed in one place rather than recomputed per caller.
 #'
 #' @param task ([TaskCpt]).
 #' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`.
-#' @return A numeric matrix, one row per sequence aligned to `task$row_ids`
-#'   (`rownames` set to the sequence ids), columns `min.log.lambda` and
-#'   `max.log.lambda`: the `target.mat` shape
-#'   [penaltyLearning::IntervalRegressionCV()] consumes.
+#' @param rows (`integer()`)\cr
+#'   Row ids to score, defaulting to every row with role `"use"`.
+#' @return A `data.table` in the canonical `model.errors` schema, one row per
+#'   model per sequence, keyed by `problem` (the row id).
 #' @noRd
-cpt_target_intervals = function(task, Kmax) {
+cpt_label_errors = function(task, Kmax, rows = task$row_ids) {
   problem = NULL # silence the R CMD check / lintr note on the := columns
   label_type = task$label_type
-  parts = cpt_extract_data(task)
+  parts = cpt_extract_data(task, rows)
   ids = parts$ids
 
   sm_list = list()
@@ -361,13 +371,54 @@ cpt_target_intervals = function(task, Kmax) {
     parts$target
   ))
 
-  me = cpt_model_errors(sm, predicted, regions, label_type)
+  cpt_model_errors(sm, predicted, regions, label_type)
+}
+
+#' Compute the log(penalty) target interval matrix for a TaskCpt
+#'
+#' The train-time label pipeline: score every model against the labels
+#' (`cpt_label_errors()`), then invert the error curves with
+#' [penaltyLearning::targetIntervals()] into the interval of log(lambda)
+#' values reaching minimal label error per sequence.
+#'
+#' @param task ([TaskCpt]).
+#' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`.
+#' @return A numeric matrix, one row per sequence aligned to `task$row_ids`
+#'   (`rownames` set to the sequence ids), columns `min.log.lambda` and
+#'   `max.log.lambda`: the `target.mat` shape
+#'   [penaltyLearning::IntervalRegressionCV()] consumes.
+#' @noRd
+cpt_target_intervals = function(task, Kmax) {
+  ids = task$row_ids
+
+  me = cpt_label_errors(task, Kmax, ids)
   ti = as.data.table(penaltyLearning::targetIntervals(me, problem.vars = "problem"))
 
   ti = ti[match(ids, ti$problem), ]
   target = as.matrix(ti[, c("min.log.lambda", "max.log.lambda")])
   rownames(target) = as.character(ids)
   target
+}
+
+#' Flag the [penaltyLearning::modelSelection()] rows selected at a penalty
+#'
+#' The intervals tile `(-Inf, Inf)` half-open as `[min, max)`, so exactly one
+#' model per problem matches; `<=` on both ends would double-match at an
+#' interval boundary. Predict and scoring must apply the identical rule or the
+#' reported error belongs to a different model than the one predicted, hence
+#' the one shared definition.
+#'
+#' `log_lambda` is recycled, so it takes either a single penalty against one
+#' problem's models, or a column of per-row penalties from a joined table.
+#'
+#' @param ms (`data.table`)\cr
+#'   [penaltyLearning::modelSelection()] output, columns `min.log.lambda` and
+#'   `max.log.lambda`.
+#' @param log_lambda (`numeric()`)\cr Penalty on the log(lambda) scale.
+#' @return A `logical()` vector, one element per row of `ms`.
+#' @noRd
+cpt_is_selected = function(ms, log_lambda) {
+  ms[["min.log.lambda"]] <= log_lambda & log_lambda < ms[["max.log.lambda"]]
 }
 
 #' Segment one sequence at a single learned penalty (predict-side)
@@ -393,9 +444,13 @@ cpt_segment = function(signal, log_lambda, Kmax, label_type) {
     penaltyLearning::modelSelection(as.data.frame(path$models), complexity = "complexity")
   )
 
-  # The intervals tile (-Inf, Inf) half-open as [min, max), so exactly one
-  # model matches; <= on both ends would double-match at interval boundaries.
-  hit = ms[["min.log.lambda"]] <= log_lambda & log_lambda < ms[["max.log.lambda"]]
+  hit = cpt_is_selected(ms, log_lambda)
+  # A non-finite penalty (a degenerate regression fit, or +Inf, which no
+  # half-open interval contains) matches nothing; say so instead of returning
+  # an empty segmentation.
+  if (sum(hit, na.rm = TRUE) != 1L) {
+    stopf("no model selected at log(lambda) = %s", format(log_lambda))
+  }
   k = ms[["complexity"]][hit]
 
   predicted = path$predicted[path$predicted[["complexity"]] == k, ]

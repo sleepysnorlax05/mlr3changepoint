@@ -13,6 +13,7 @@
 
 .onUnload = function(libpath) {
   unregister_learners()
+  unregister_measures()
   unregister_mlr3_reflections()
 }
 
@@ -26,6 +27,16 @@ unregister_learners = function() {
   x$remove("changepoint.intregrcv")
 }
 
+register_measures = function() {
+  x = utils::getFromNamespace("mlr_measures", "mlr3")
+  x$add("changepoint.label_error", function() MeasureCptLabelError$new())
+}
+
+unregister_measures = function() {
+  x = utils::getFromNamespace("mlr_measures", "mlr3")
+  x$remove("changepoint.label_error")
+}
+
 unregister_mlr3_reflections = function() {
   x = utils::getFromNamespace("mlr_reflections", "mlr3")
 
@@ -36,5 +47,7 @@ unregister_mlr3_reflections = function() {
   x$task_feature_types = x$task_feature_types[names(x$task_feature_types) != "lst"]
   x$learner_properties$changepoint = NULL
   x$learner_predict_types$changepoint = NULL
+  x$measure_properties$changepoint = NULL
+  x$default_measures$changepoint = NULL
 }
 # nocov end

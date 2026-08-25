@@ -37,10 +37,15 @@ register_reflections = function() {
 
   # learner predict types
   x$learner_predict_types$changepoint = list(response = "response")
+
+  # measure properties + default measure
+  x$measure_properties$changepoint = x$measure_properties$regr
+  x$default_measures$changepoint = "changepoint.label_error"
 }
 
 register_mlr3 = function() {
   register_reflections()
   register_learners()
+  register_measures()
 }
 # nocov end
