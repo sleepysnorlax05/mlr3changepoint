@@ -80,7 +80,7 @@ MeasureCptLabelError = R6::R6Class(
         range = c(0, 1),
         minimize = TRUE,
         properties = c("requires_task", "requires_learner", "weights"),
-        packages = "penaltyLearning",
+        packages = c("penaltyLearning", "changepoint", "PeakSegOptimal", "PeakError"),
         label = "Label Error",
         man = "mlr3changepoint::mlr_measures_changepoint.label_error"
       )
