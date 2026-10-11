@@ -25,6 +25,9 @@ Imports:
 Suggests:
     changepoint,
     future.apply,
+    mlr3benchmark,
+    mlr3pipelines,
+    mlr3tuning,
     mmit,
     PeakError,
     PeakSegOptimal,
