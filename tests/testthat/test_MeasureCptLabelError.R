@@ -5,7 +5,7 @@ test_that("changepoint.label_error is in the dictionary", {
   expect_equal(measure$range, c(0, 1))
   expect_true(measure$minimize)
   expect_subset(
-    c("requires_task", "requires_learner", "weights"),
+    c("requires_task", "requires_learner", "weights", "na_score"),
     measure$properties
   )
 })
