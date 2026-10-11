@@ -78,6 +78,8 @@ learner$predict(task)
 \seealso{
 Other Learner: 
 \code{\link{LearnerCpt}},
+\code{\link{mlr_learners_changepoint.mmif}},
+\code{\link{mlr_learners_changepoint.mmit}},
 \code{\link{mlr_learners_changepoint.xgboost.aft}}
 }
 \concept{Learner}
