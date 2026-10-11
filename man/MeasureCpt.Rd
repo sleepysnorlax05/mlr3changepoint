@@ -12,7 +12,8 @@ Calling \verb{$score()} on this base class raises an error.
 A changepoint measure scores a \link{PredictionCpt}, whose \code{response} is the predicted penalty
 \code{log(lambda)} rather than a segmentation. Deriving the segmentation that penalty selects needs
 the sequences and the complexity cap they were fitted under, so a measure will usually declare
-the \code{"requires_task"} and \code{"requires_learner"} properties and read \code{Kmax} from the learner.
+the \code{"requires_task"} property and read \code{Kmax} from the prediction's \code{extra} data, where the
+learners of this package record it per sequence.
 }
 \seealso{
 Other Measure: 
