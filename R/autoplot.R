@@ -1,0 +1,205 @@
+# Peak label palette from the PeakError::PeakError() example (`ann.colors`).
+# PeakError does not export it, unlike penaltyLearning::change.colors, so it is
+# copied here once.
+cpt_peak_colors = c(
+  noPeaks = "#f6f4bf",
+  peakStart = "#ffafaf",
+  peakEnd = "#ff4c4c",
+  peaks = "#a445ee"
+)
+
+#' Signal and label layers shared by the TaskCpt and PredictionCpt plots
+#'
+#' One facet per row id: the signal as a line over its 1-based positions and the
+#' label regions as full-height rectangles filled by annotation.
+#'
+#' @param parts (`list`)\cr Output of `cpt_extract_data()`.
+#' @param label_type (`character(1)`)\cr `"changepoint"` or `"peak"`.
+#' @return [ggplot2::ggplot()] with the label layer first and the signal second.
+#' @noRd
+cpt_plot_base = function(parts, label_type) {
+  position = value = xmin = xmax = label = NULL # silence R CMD check notes on the aes() columns
+  n = length(parts$ids)
+  if (n == 0L) {
+    stopf("nothing to plot: no rows selected")
+  }
+
+  # Region edges sit on half-positions so a mark is drawn inside a region exactly
+  # when the measure counts it there. Changepoint regions are (start, end] and a
+  # change at X lies between X and X + 1 (penaltyLearning::labelError()); peak
+  # regions cover positions start..end (cpt_errors_peak() passes start - 1 as the
+  # 0-based chromStart).
+  left = if (label_type == "changepoint") 0.5 else -0.5
+
+  signal = vector("list", n)
+  labels = vector("list", n)
+  for (i in seq_len(n)) {
+    s = parts$sequence[[i]]
+    lab = parts$target[[i]]
+    # rep() rather than recycling a length-1 id: data.table() would NA-fill a
+    # 0-row label table into one bogus row.
+    signal[[i]] = data.table(row_id = rep(parts$ids[i], length(s)), position = seq_along(s), value = s)
+    labels[[i]] = data.table(
+      row_id = rep(parts$ids[i], nrow(lab)),
+      xmin = lab$start + left,
+      xmax = lab$end + 0.5,
+      label = lab$label
+    )
+  }
+
+  colors = switch(
+    label_type,
+    changepoint = penaltyLearning::change.colors,
+    peak = cpt_peak_colors
+  )
+
+  ggplot2::ggplot() +
+    ggplot2::geom_rect(
+      data = rbindlist(labels),
+      ggplot2::aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf, fill = label),
+      alpha = 0.5
+    ) +
+    ggplot2::geom_line(data = rbindlist(signal), ggplot2::aes(x = position, y = value)) +
+    ggplot2::scale_fill_manual(values = colors) +
+    ggplot2::facet_wrap("row_id", scales = "free")
+}
+
+#' @title Plot a Changepoint Task
+#'
+#' @description
+#' Draws each sequence of a [TaskCpt] as a line, one facet per row id, with its
+#' label regions shaded by annotation. Changepoint labels use
+#' [penaltyLearning::change.colors]; peak labels (`noPeaks`, `peakStart`,
+#' `peakEnd`, `peaks`) use the palette of the `PeakError::PeakError()` example.
+#' Labels outside these vocabularies are drawn grey.
+#'
+#' Every row with role `"use"` gets a facet, so to plot part of a large task,
+#' filter a copy first: `task$clone()$filter(rows)`.
+#'
+#' @param object ([TaskCpt]).
+#' @param theme ([ggplot2::theme()])\cr
+#'   The [ggplot2::theme_minimal()] is applied by default.
+#' @param ... (ignored).
+#' @return [ggplot2::ggplot()].
+#'
+#' @examplesIf mlr3misc::require_namespaces(c("ggplot2", "penaltyLearning"), quietly = TRUE)
+#' library(data.table)
+#' set.seed(36)
+#' toy = data.table(
+#'   seq = list(c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9)), rnorm(100, 0)),
+#'   label = list(
+#'     data.table(start = c(90, 190), end = c(110, 210), label = c("1change", "1change")),
+#'     data.table(start = 1, end = 100, label = "0changes")
+#'   )
+#' )
+#' task = TaskCpt$new(
+#'   id = "toy", backend = toy,
+#'   target = "label", sequence = "seq", label_type = "changepoint"
+#' )
+#' ggplot2::autoplot(task)
+#'
+#' @exportS3Method ggplot2::autoplot
+autoplot.TaskCpt = function(object, theme = ggplot2::theme_minimal(), ...) {
+  cpt_plot_base(cpt_extract_data(object), object$label_type) + theme
+}
+
+#' @title Plot a Changepoint Prediction
+#'
+#' @description
+#' Draws the facets of [autoplot.TaskCpt()] for the predicted sequences plus the
+#' segmentation decoded at each sequence's predicted penalty: dashed vertical
+#' lines at predicted changes (`label_type = "changepoint"`) or horizontal
+#' segments at the mean count of each predicted peak (`label_type = "peak"`). A
+#' mark missing from a region that requires one, or inside a region that forbids
+#' it, is a label error.
+#'
+#' @details
+#' A [PredictionCpt] stores only the predicted `log(lambda)` per sequence, so the
+#' segmentation is re-derived the way [mlr_measures_changepoint.label_error] does
+#' it: sequences and labels come from `task`, and the complexity cap from the
+#' `Kmax` the prediction records per sequence (learners of this package always
+#' record it). `Kmax` is only needed for a prediction built by hand without that
+#' record. A non-finite predicted penalty selects no model and raises an error.
+#'
+#' Every predicted row gets a facet; for many sequences predict on a subset
+#' (`learner$predict(task, row_ids = rows)`).
+#'
+#' @param object ([PredictionCpt]).
+#' @param task ([TaskCpt])\cr
+#'   Task the prediction was made on; must contain every predicted row.
+#' @param Kmax (`integer(1)` | `NULL`)\cr
+#'   Complexity cap for a prediction that does not record one; ignored when the
+#'   prediction carries `Kmax`.
+#' @param theme ([ggplot2::theme()])\cr
+#'   The [ggplot2::theme_minimal()] is applied by default.
+#' @param ... (ignored).
+#' @return [ggplot2::ggplot()].
+#'
+#' @examplesIf mlr3misc::require_namespaces(c("ggplot2", "penaltyLearning", "changepoint"), quietly = TRUE)
+#' library(data.table)
+#' set.seed(36)
+#' toy = data.table(
+#'   seq = list(c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9)), rnorm(100, 0)),
+#'   label = list(
+#'     data.table(start = c(90, 190), end = c(110, 210), label = c("1change", "1change")),
+#'     data.table(start = 1, end = 100, label = "0changes")
+#'   )
+#' )
+#' task = TaskCpt$new(
+#'   id = "toy", backend = toy,
+#'   target = "label", sequence = "seq", label_type = "changepoint"
+#' )
+#'
+#' p = PredictionCpt$new(task = task, response = c(2.5, 3.0))
+#' # A hand-made prediction records no Kmax, so pass it; learner predictions carry their own.
+#' ggplot2::autoplot(p, task = task, Kmax = 3L)
+#'
+#' @exportS3Method ggplot2::autoplot
+autoplot.PredictionCpt = function(object, task, Kmax = NULL, theme = ggplot2::theme_minimal(), ...) {
+  x = xend = y = NULL # silence R CMD check notes on the aes() columns
+  assert_class(task, "TaskCpt")
+  label_type = task$label_type
+  parts = cpt_extract_data(task, object$row_ids)
+  plot = cpt_plot_base(parts, label_type)
+
+  response = object$response
+  Kmax = object$data$extra$Kmax %??% rep(Kmax, length(response))
+  if (!test_integerish(Kmax, lower = 1, any.missing = FALSE, len = length(response))) {
+    stopf(paste0(
+      "plotting a prediction needs a positive integer Kmax per sequence: ",
+      "the prediction records none, so pass Kmax"
+    ))
+  }
+
+  # Decode each sequence at its own predicted penalty and cap, the model the
+  # measure scores. Keep 0-row tables so rbindlist() keeps the columns when
+  # nothing is predicted anywhere.
+  marks = vector("list", length(response))
+  for (i in seq_along(response)) {
+    s = parts$sequence[[i]]
+    pred = cpt_segment(s, response[i], Kmax[i], label_type)$predicted
+    id = rep(parts$ids[i], nrow(pred))
+    if (label_type == "changepoint") {
+      # A change at X lies between positions X and X + 1.
+      marks[[i]] = data.table(row_id = id, x = pred$change + 0.5)
+    } else {
+      # A peak covers 1-based positions chromStart + 1 .. chromEnd; draw it at its
+      # mean count, from cumulative sums.
+      cs = c(0, cumsum(s))
+      marks[[i]] = data.table(
+        row_id = id,
+        x = pred$chromStart + 0.5,
+        xend = pred$chromEnd + 0.5,
+        y = (cs[pred$chromEnd + 1L] - cs[pred$chromStart + 1L]) / (pred$chromEnd - pred$chromStart)
+      )
+    }
+  }
+  marks = rbindlist(marks)
+
+  layer = if (label_type == "changepoint") {
+    ggplot2::geom_vline(data = marks, ggplot2::aes(xintercept = x), colour = "deepskyblue", linetype = "dashed")
+  } else {
+    ggplot2::geom_segment(data = marks, ggplot2::aes(x = x, xend = xend, y = y, yend = y), colour = "deepskyblue")
+  }
+  plot + layer + theme
+}
