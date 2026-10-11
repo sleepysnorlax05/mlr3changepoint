@@ -20,11 +20,13 @@
 register_learners = function() {
   x = utils::getFromNamespace("mlr_learners", "mlr3")
   x$add("changepoint.intregrcv", function() LearnerCptIntRegrCV$new())
+  x$add("changepoint.xgboost.aft", function() LearnerCptXGBoostAFT$new())
 }
 
 unregister_learners = function() {
   x = utils::getFromNamespace("mlr_learners", "mlr3")
   x$remove("changepoint.intregrcv")
+  x$remove("changepoint.xgboost.aft")
 }
 
 register_measures = function() {
