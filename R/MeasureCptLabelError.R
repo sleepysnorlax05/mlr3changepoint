@@ -10,11 +10,18 @@
 #' A [PredictionCpt] stores only the predicted penalty `log(lambda)` per
 #' sequence, not a segmentation. This measure re-derives the model path each
 #' penalty selects (via the shared label-error pipeline in `cpt_label_errors()`),
-#' reads off the model at that penalty, and counts its label errors. It therefore
-#' declares `"requires_task"` (to read the sequences and labels) and
-#' `"requires_learner"` (to read the `Kmax` complexity cap the path was fit
-#' under). It also declares `"na_score"`, since an empty prediction, a
-#' non-finite predicted penalty, or a test set without labels scores `NA`.
+#' reads off the model at that penalty, and counts its label errors. That path
+#' depends on the complexity cap `Kmax` the penalty was learned under, which the
+#' learners of this package record per sequence in the prediction's `extra`
+#' data (`as.data.table(prediction)$Kmax`). Reading it from the prediction keeps
+#' the score right for wrapped learners (a `GraphLearner` prefixes parameter
+#' ids) and for resampled predictions whose folds were tuned to different caps.
+#' A prediction without it (e.g. built by hand) falls back to the `Kmax` of the
+#' learner passed to `$score()`; scoring errors if neither gives one.
+#'
+#' The measure declares `"requires_task"` (to read the sequences and labels) and
+#' `"na_score"`, since an empty prediction, a non-finite predicted penalty, or a
+#' test set without labels scores `NA`.
 #'
 #' @details
 #' The score micro-averages over sequences: `sum(w * errors) / sum(w * n_labels)`,
@@ -63,9 +70,7 @@
 #' set.seed(36)
 #' learner$train(task)
 #' prediction = learner$predict(task)
-#' prediction$score(
-#'   msr("changepoint.label_error"), task = task, learner = learner
-#' )
+#' prediction$score(msr("changepoint.label_error"), task = task)
 #' }
 #'
 #' @export
@@ -80,7 +85,7 @@ MeasureCptLabelError = R6::R6Class(
         id = "changepoint.label_error",
         range = c(0, 1),
         minimize = TRUE,
-        properties = c("requires_task", "requires_learner", "weights", "na_score"),
+        properties = c("requires_task", "weights", "na_score"),
         packages = c("penaltyLearning", "changepoint", "PeakSegOptimal", "PeakError"),
         label = "Label Error",
         man = "mlr3changepoint::mlr_measures_changepoint.label_error"
@@ -88,7 +93,7 @@ MeasureCptLabelError = R6::R6Class(
     }
   ),
   private = list(
-    .score = function(prediction, task, learner, weights = NULL, ...) {
+    .score = function(prediction, task, learner = NULL, weights = NULL, ...) {
       rows = prediction$row_ids
       response = prediction$response
       weights = weights %??% rep(1, length(rows))
@@ -100,8 +105,22 @@ MeasureCptLabelError = R6::R6Class(
         return(NA_real_)
       }
 
-      Kmax = learner$param_set$values$Kmax
-      me = cpt_label_errors(task, Kmax, rows)
+      # Learner predictions record the Kmax each penalty was learned under per
+      # row; a resampled prediction can mix caps across folds. Hand-built
+      # predictions fall back to the learner's own Kmax.
+      Kmax = prediction$data$extra$Kmax %??% rep(learner$param_set$values$Kmax, length(rows))
+      if (!test_integerish(Kmax, lower = 1, any.missing = FALSE, len = length(rows))) {
+        stopf(paste0(
+          "label-error scoring needs a positive integer Kmax per sequence: ",
+          "the prediction records none and the learner sets none"
+        ))
+      }
+
+      me = list()
+      for (k in unique(Kmax)) {
+        me[[length(me) + 1L]] = cpt_label_errors(task, k, rows[Kmax == k])
+      }
+      me = rbindlist(me)
       me$log_lambda = response[match(me$problem, rows)]
       sel = me[cpt_is_selected(me, me$log_lambda), ]
 
