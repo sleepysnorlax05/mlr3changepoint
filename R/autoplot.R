@@ -24,28 +24,31 @@ cpt_plot_base = function(parts, label_type) {
     stopf("nothing to plot: no rows selected")
   }
 
-  # Region edges sit on half-positions so a mark is drawn inside a region exactly
-  # when the measure counts it there. Changepoint regions are (start, end] and a
-  # change at X lies between X and X + 1 (penaltyLearning::labelError()); peak
-  # regions cover positions start..end (cpt_errors_peak() passes start - 1 as the
-  # 0-based chromStart).
-  left = if (label_type == "changepoint") 0.5 else -0.5
+  # Draw each region so a mark falls strictly inside it exactly when the measure
+  # counts it there, never on an edge. A change at X is drawn at X + 0.5, between
+  # positions X and X + 1, and penaltyLearning::labelError() counts it in
+  # (start, end] when start < X <= end, so the region spans [start + 1, end + 1].
+  # Peak regions cover positions start..end (cpt_errors_peak() passes start - 1 as
+  # the 0-based chromStart), so they span [start - 0.5, end + 0.5] and a predicted
+  # peak is drawn between the centres of its first and last positions.
+  shift = if (label_type == "changepoint") c(1, 1) else c(-0.5, 0.5)
 
   signal = vector("list", n)
-  labels = vector("list", n)
+  regions = vector("list", n)
   for (i in seq_len(n)) {
     s = parts$sequence[[i]]
     lab = parts$target[[i]]
     # rep() rather than recycling a length-1 id: data.table() would NA-fill a
     # 0-row label table into one bogus row.
     signal[[i]] = data.table(row_id = rep(parts$ids[i], length(s)), position = seq_along(s), value = s)
-    labels[[i]] = data.table(
+    regions[[i]] = data.table(
       row_id = rep(parts$ids[i], nrow(lab)),
-      xmin = lab$start + left,
-      xmax = lab$end + 0.5,
+      xmin = lab$start + shift[1L],
+      xmax = lab$end + shift[2L],
       label = lab$label
     )
   }
+  regions = rbindlist(regions)
 
   colors = switch(
     label_type,
@@ -53,15 +56,19 @@ cpt_plot_base = function(parts, label_type) {
     peak = cpt_peak_colors
   )
 
-  ggplot2::ggplot() +
+  p = ggplot2::ggplot() +
     ggplot2::geom_rect(
-      data = rbindlist(labels),
+      data = regions,
       ggplot2::aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf, fill = label),
       alpha = 0.5
     ) +
     ggplot2::geom_line(data = rbindlist(signal), ggplot2::aes(x = position, y = value)) +
-    ggplot2::scale_fill_manual(values = colors) +
     ggplot2::facet_wrap("row_id", scales = "free")
+  # Without any label the manual scale only warns that it matched no level.
+  if (nrow(regions)) {
+    p = p + ggplot2::scale_fill_manual(values = colors)
+  }
+  p
 }
 
 #' @title Plot a Changepoint Task
@@ -109,9 +116,11 @@ autoplot.TaskCpt = function(object, theme = ggplot2::theme_minimal(), ...) {
 #' Draws the facets of [autoplot.TaskCpt()] for the predicted sequences plus the
 #' segmentation decoded at each sequence's predicted penalty: dashed vertical
 #' lines at predicted changes (`label_type = "changepoint"`) or horizontal
-#' segments at the mean count of each predicted peak (`label_type = "peak"`). A
-#' mark missing from a region that requires one, or inside a region that forbids
-#' it, is a label error.
+#' segments at the mean count of each predicted peak (`label_type = "peak"`).
+#' For the `0changes`, `1change`, `noPeaks` and `peaks` labels, a mark missing
+#' from a region that requires one, or inside a region that forbids it, is a
+#' label error. `peakStart` and `peakEnd` regions are scored on where a peak
+#' starts or ends, not on overlap.
 #'
 #' @details
 #' A [PredictionCpt] stores only the predicted `log(lambda)` per sequence, so the
@@ -119,7 +128,8 @@ autoplot.TaskCpt = function(object, theme = ggplot2::theme_minimal(), ...) {
 #' it: sequences and labels come from `task`, and the complexity cap from the
 #' `Kmax` the prediction records per sequence (learners of this package always
 #' record it). `Kmax` is only needed for a prediction built by hand without that
-#' record. A non-finite predicted penalty selects no model and raises an error.
+#' record. A non-finite predicted penalty selects no model and raises an error,
+#' as do duplicated row ids (combined resampling iterations).
 #'
 #' Every predicted row gets a facet; for many sequences predict on a subset
 #' (`learner$predict(task, row_ids = rows)`).
@@ -158,11 +168,18 @@ autoplot.TaskCpt = function(object, theme = ggplot2::theme_minimal(), ...) {
 autoplot.PredictionCpt = function(object, task, Kmax = NULL, theme = ggplot2::theme_minimal(), ...) {
   x = xend = y = NULL # silence R CMD check notes on the aes() columns
   assert_class(task, "TaskCpt")
+  if (anyDuplicated(object$row_ids)) {
+    stopf("the prediction has duplicated row ids; plot one resampling iteration at a time")
+  }
   label_type = task$label_type
   parts = cpt_extract_data(task, object$row_ids)
-  plot = cpt_plot_base(parts, label_type)
+  p = cpt_plot_base(parts, label_type)
 
   response = object$response
+  bad = !is.finite(response)
+  if (any(bad)) {
+    stopf("non-finite predicted penalty selects no model for row ids: %s", str_collapse(object$row_ids[bad]))
+  }
   Kmax = object$data$extra$Kmax %??% rep(Kmax, length(response))
   if (!test_integerish(Kmax, lower = 1, any.missing = FALSE, len = length(response))) {
     stopf(paste0(
@@ -183,13 +200,13 @@ autoplot.PredictionCpt = function(object, task, Kmax = NULL, theme = ggplot2::th
       # A change at X lies between positions X and X + 1.
       marks[[i]] = data.table(row_id = id, x = pred$change + 0.5)
     } else {
-      # A peak covers 1-based positions chromStart + 1 .. chromEnd; draw it at its
-      # mean count, from cumulative sums.
+      # A peak covers 1-based positions chromStart + 1 .. chromEnd; draw it between
+      # the centres of those positions at its mean count, from cumulative sums.
       cs = c(0, cumsum(s))
       marks[[i]] = data.table(
         row_id = id,
-        x = pred$chromStart + 0.5,
-        xend = pred$chromEnd + 0.5,
+        x = pred$chromStart + 1,
+        xend = pred$chromEnd,
         y = (cs[pred$chromEnd + 1L] - cs[pred$chromStart + 1L]) / (pred$chromEnd - pred$chromStart)
       )
     }
@@ -201,5 +218,5 @@ autoplot.PredictionCpt = function(object, task, Kmax = NULL, theme = ggplot2::th
   } else {
     ggplot2::geom_segment(data = marks, ggplot2::aes(x = x, xend = xend, y = y, yend = y), colour = "deepskyblue")
   }
-  plot + layer + theme
+  p + layer + theme
 }
