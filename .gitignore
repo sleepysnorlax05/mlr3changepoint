@@ -187,3 +187,7 @@ cspell.json
 .cspell/
 /.quarto/
 **/*.quarto_ipynb
+
+# testthat failure artifacts
+tests/testthat/_problems/
+tests/testthat/testthat-problems.rds
