@@ -28,9 +28,11 @@ The \code{\link[ggplot2:ggtheme]{ggplot2::theme_minimal()}} is applied by defaul
 Draws the facets of \code{\link[=autoplot.TaskCpt]{autoplot.TaskCpt()}} for the predicted sequences plus the
 segmentation decoded at each sequence's predicted penalty: dashed vertical
 lines at predicted changes (\code{label_type = "changepoint"}) or horizontal
-segments at the mean count of each predicted peak (\code{label_type = "peak"}). A
-mark missing from a region that requires one, or inside a region that forbids
-it, is a label error.
+segments at the mean count of each predicted peak (\code{label_type = "peak"}).
+For the \verb{0changes}, \verb{1change}, \code{noPeaks} and \code{peaks} labels, a mark missing
+from a region that requires one, or inside a region that forbids it, is a
+label error. \code{peakStart} and \code{peakEnd} regions are scored on where a peak
+starts or ends, not on overlap.
 }
 \details{
 A \link{PredictionCpt} stores only the predicted \code{log(lambda)} per sequence, so the
@@ -38,7 +40,8 @@ segmentation is re-derived the way \link{mlr_measures_changepoint.label_error} d
 it: sequences and labels come from \code{task}, and the complexity cap from the
 \code{Kmax} the prediction records per sequence (learners of this package always
 record it). \code{Kmax} is only needed for a prediction built by hand without that
-record. A non-finite predicted penalty selects no model and raises an error.
+record. A non-finite predicted penalty selects no model and raises an error,
+as do duplicated row ids (combined resampling iterations).
 
 Every predicted row gets a facet; for many sequences predict on a subset
 (\code{learner$predict(task, row_ids = rows)}).

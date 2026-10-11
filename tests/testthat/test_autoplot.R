@@ -4,8 +4,9 @@ test_that("autoplot.TaskCpt shades changepoint labels with penaltyLearning colou
 
   p = ggplot2::autoplot(toy())
   rects = ggplot2::layer_data(p, 1L)
-  # (start, end] regions on half-positions: (90, 110], (190, 210], (1, 100].
-  expect_setequal(rects$xmin, c(90.5, 190.5, 1.5))
+  # (start, end] regions span [start + 1, end + 1]: (90, 110], (190, 210], (1, 100].
+  expect_setequal(rects$xmin, c(91, 191, 2))
+  expect_setequal(rects$xmax, c(111, 211, 101))
   expect_setequal(rects$fill, unname(penaltyLearning::change.colors[c("1change", "0changes")]))
   expect_equal(nrow(ggplot2::layer_data(p, 2L)), 400L) # 300 + 100 signal points
 })
@@ -37,21 +38,54 @@ test_that("autoplot.PredictionCpt marks the changes decoded at each penalty", {
   expect_equal(nrow(ggplot2::layer_data(ggplot2::autoplot(none, task = task, Kmax = 2L), 3L)), 0L)
 })
 
-test_that("autoplot.PredictionCpt uses the Kmax a learner prediction records", {
+test_that("a change is drawn inside a region exactly when the measure counts it there", {
   skip_if_not_installed("ggplot2")
-  skip_if_not_installed("xgboost")
   skip_if_not_installed("penaltyLearning")
   skip_if_not_installed("changepoint")
 
-  task = toy_interval()
-  p = lrn("changepoint.xgboost.aft", Kmax = 1L, nrounds = 5L)$train(task)$predict(task)
-  marks = ggplot2::layer_data(ggplot2::autoplot(p, task = task), 3L)
-  # Kmax = 1 allows at most one change per sequence; an explicit Kmax is ignored.
-  expect_lte(nrow(marks), task$nrow)
-  expect_equal(
-    ggplot2::layer_data(ggplot2::autoplot(p, task = task, Kmax = 3L), 3L)$xintercept,
-    marks$xintercept
+  # A noiseless step puts the only change at X = 50. Row 1's region (50, 60] starts
+  # at X, which labelError() does not count; row 2's region (40, 50] ends at X,
+  # which it does.
+  step = c(rep(0, 50), rep(10, 50))
+  task = TaskCpt$new(
+    id = "edges",
+    backend = data.table::data.table(
+      signal = list(step, step),
+      label = list(
+        data.table::data.table(start = 50, end = 60, label = "1change"),
+        data.table::data.table(start = 40, end = 50, label = "1change")
+      )
+    ),
+    target = "label",
+    sequence = "signal",
+    label_type = "changepoint"
   )
+  p = PredictionCpt$new(task, response = c(-100, -100), extra = list(Kmax = c(1L, 1L)))
+  expect_equal(unname(p$score(msr("changepoint.label_error"), task = task)), 1 / 2)
+
+  g = ggplot2::autoplot(p, task = task)
+  rects = ggplot2::layer_data(g, 1L)
+  marks = ggplot2::layer_data(g, 3L)
+  expect_equal(marks$xintercept, c(50.5, 50.5))
+  inside = rects$xmin < marks$xintercept & marks$xintercept < rects$xmax
+  expect_equal(inside, c(FALSE, TRUE))
+})
+
+test_that("autoplot.PredictionCpt uses the Kmax a prediction records", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  task = toy()
+  # At a tiny penalty a row draws its most complex model: as many changes as its cap.
+  recorded = PredictionCpt$new(task, response = c(-100, 100), extra = list(Kmax = c(1L, 1L)))
+  marks = ggplot2::layer_data(ggplot2::autoplot(recorded, task = task), 3L)
+  expect_equal(nrow(marks), 1L)
+  # The recorded cap wins over an explicit one.
+  expect_equal(nrow(ggplot2::layer_data(ggplot2::autoplot(recorded, task = task, Kmax = 3L), 3L)), 1L)
+
+  bare = PredictionCpt$new(task, response = c(-100, 100))
+  expect_equal(nrow(ggplot2::layer_data(ggplot2::autoplot(bare, task = task, Kmax = 3L), 3L)), 3L)
 })
 
 test_that("autoplot.PredictionCpt draws decoded peaks as segments at their mean", {
@@ -64,7 +98,8 @@ test_that("autoplot.PredictionCpt draws decoded peaks as segments at their mean"
   marks = ggplot2::layer_data(ggplot2::autoplot(p, task = task, Kmax = 1L), 3L)
   expect_equal(nrow(marks), 1L)
   s = cpt_extract_data(task)$sequence[[1L]]
-  expect_equal(marks$y, mean(s[(marks$x + 0.5):(marks$xend - 0.5)]))
+  # The segment runs between the centres of the peak's first and last positions.
+  expect_equal(marks$y, mean(s[marks$x:marks$xend]))
 })
 
 test_that("autoplot.PredictionCpt validates its inputs", {
@@ -82,7 +117,10 @@ test_that("autoplot.PredictionCpt validates its inputs", {
   expect_error(ggplot2::autoplot(empty, task = task, Kmax = 2L), "nothing to plot")
 
   infinite = PredictionCpt$new(task, response = c(Inf, 0))
-  expect_error(ggplot2::autoplot(infinite, task = task, Kmax = 2L), "no model selected")
+  expect_error(ggplot2::autoplot(infinite, task = task, Kmax = 2L), "non-finite predicted penalty .* 1")
+
+  twice = PredictionCpt$new(task, row_ids = c(1L, 1L), response = c(1, 1))
+  expect_error(ggplot2::autoplot(twice, task = task, Kmax = 2L), "duplicated row ids")
 
   task$filter(1L)
   expect_error(ggplot2::autoplot(p, task = task, Kmax = 2L), "subset")
