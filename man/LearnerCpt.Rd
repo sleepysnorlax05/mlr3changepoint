@@ -11,7 +11,8 @@ Calling \verb{$train()} or \verb{$predict()} on this base class raises an error.
 }
 \seealso{
 Other Learner: 
-\code{\link{mlr_learners_changepoint.intregrcv}}
+\code{\link{mlr_learners_changepoint.intregrcv}},
+\code{\link{mlr_learners_changepoint.xgboost.aft}}
 }
 \concept{Learner}
 \section{Super class}{
