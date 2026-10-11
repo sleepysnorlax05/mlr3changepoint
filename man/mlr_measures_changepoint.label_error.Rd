@@ -15,7 +15,8 @@ penalty selects (via the shared label-error pipeline in \code{cpt_label_errors()
 reads off the model at that penalty, and counts its label errors. It therefore
 declares \code{"requires_task"} (to read the sequences and labels) and
 \code{"requires_learner"} (to read the \code{Kmax} complexity cap the path was fit
-under).
+under). It also declares \code{"na_score"}, since an empty prediction, a
+non-finite predicted penalty, or a test set without labels scores \code{NA}.
 }
 \details{
 The score micro-averages over sequences: \code{sum(w * errors) / sum(w * n_labels)},

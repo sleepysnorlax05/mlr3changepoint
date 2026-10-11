@@ -13,7 +13,8 @@
 #' reads off the model at that penalty, and counts its label errors. It therefore
 #' declares `"requires_task"` (to read the sequences and labels) and
 #' `"requires_learner"` (to read the `Kmax` complexity cap the path was fit
-#' under).
+#' under). It also declares `"na_score"`, since an empty prediction, a
+#' non-finite predicted penalty, or a test set without labels scores `NA`.
 #'
 #' @details
 #' The score micro-averages over sequences: `sum(w * errors) / sum(w * n_labels)`,
@@ -79,7 +80,7 @@ MeasureCptLabelError = R6::R6Class(
         id = "changepoint.label_error",
         range = c(0, 1),
         minimize = TRUE,
-        properties = c("requires_task", "requires_learner", "weights"),
+        properties = c("requires_task", "requires_learner", "weights", "na_score"),
         packages = c("penaltyLearning", "changepoint", "PeakSegOptimal", "PeakError"),
         label = "Label Error",
         man = "mlr3changepoint::mlr_measures_changepoint.label_error"
