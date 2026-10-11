@@ -40,9 +40,9 @@ test_that("training errors when no label gives a finite penalty limit", {
   skip_if_not_installed("penaltyLearning")
   skip_if_not_installed("changepoint")
 
-  # A 1change label over an empty region is violated equally by every model.
+  # A 1change label past the end of every sequence is violated equally by every model.
   task = toy_interval()
-  label = rep(list(data.table::data.table(start = 50, end = 50, label = "1change")), task$nrow)
+  label = rep(list(data.table::data.table(start = 1000, end = 1001, label = "1change")), task$nrow)
   open = TaskCpt$new(
     id = "open",
     backend = data.table::data.table(signal = cpt_extract_data(task)$sequence, label = label),
