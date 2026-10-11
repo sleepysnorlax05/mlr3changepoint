@@ -82,6 +82,33 @@ toy_peak_interval = function(n = 10L) {
   )
 }
 
+# Changepoint twin whose target intervals conflict: the small mean shifts need a
+# lower penalty than the noisy flat sequences tolerate, so no constant penalty fits
+# every row and a tree learner has to split.
+toy_conflict = function(n = 10L) {
+  backend = with_seed(36, { # nolint: object_usage_linter.
+    signal = vector("list", n)
+    label = vector("list", n)
+    for (i in seq_len(n)) {
+      if (i %% 2L == 1L) {
+        signal[[i]] = c(rnorm(100, 0), rnorm(100, 1.5))
+        label[[i]] = data.table::data.table(start = 90, end = 110, label = "1change")
+      } else {
+        signal[[i]] = rnorm(200, 0, 3)
+        label[[i]] = data.table::data.table(start = 1, end = 200, label = "0changes")
+      }
+    }
+    data.table::data.table(signal = signal, label = label)
+  })
+  TaskCpt$new(
+    id = "toy_conflict",
+    backend = backend,
+    target = "label",
+    sequence = "signal",
+    label_type = "changepoint"
+  )
+}
+
 toy_peak = function() {
   backend = with_seed(36, { # nolint: object_usage_linter.
     data.table::data.table(
