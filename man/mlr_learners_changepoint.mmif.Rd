@@ -42,7 +42,8 @@ This learner can be retrieved via \link[mlr3:mlr_learners]{mlr3::mlr_learners} w
 changepoints (\code{label_type = "changepoint"}) or peaks (\code{label_type = "peak"})
 the per-sequence segment path is searched over. The learner uses it to build
 the target penalty intervals at train time and does not forward it to the
-solver; the label-error measure reads it back from the learner to decode a
+solver. Each prediction records it per sequence in its \code{extra} data
+(\code{as.data.table(prediction)$Kmax}), so the label-error measure decodes the
 predicted penalty under the same cap.
 
 \code{max_depth} (\code{integer(1)}, default \code{Inf} for unlimited depth), \code{margin},
