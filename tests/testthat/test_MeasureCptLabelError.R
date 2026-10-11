@@ -106,3 +106,23 @@ test_that("each row is decoded under the Kmax its prediction carries", {
   score = p$score(msr("changepoint.label_error"), task = task, learner = learner)
   expect_equal(unname(score), 1 / 4)
 })
+
+test_that("a prediction without Kmax falls back to the learner's trained cap", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  task = toy_interval()
+  ids = task$row_ids[c(1L, 3L)]
+  measure = msr("changepoint.label_error")
+  recorded = PredictionCpt$new(task, row_ids = ids, response = c(-100, -100), extra = list(Kmax = c(1L, 1L)))
+  bare = PredictionCpt$new(task, row_ids = ids, response = c(-100, -100))
+
+  learner = lrn("changepoint.intregrcv", Kmax = 1L)
+  expected = recorded$score(measure, task = task)
+  expect_equal(bare$score(measure, task = task, learner = learner), expected)
+
+  # A trained learner's model cap wins over a parameter changed after training.
+  learner$model = list(Kmax = 1L)
+  learner$param_set$values$Kmax = 3L
+  expect_equal(bare$score(measure, task = task, learner = learner), expected)
+})

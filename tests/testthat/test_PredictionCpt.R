@@ -135,3 +135,17 @@ test_that("empty prediction data carries weights and survives every method", {
   expect_equal(filter_prediction_data(pdata, integer())$row_ids, integer())
   expect_equal(is_missing_prediction_data(pdata), integer())
 })
+
+test_that("an empty prediction combines with a learner prediction", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  task = toy()
+  learner = lrn("changepoint.intregrcv", Kmax = 2L)
+  empty = create_empty_prediction_data(task, learner)
+  expect_equal(empty$extra, list(Kmax = integer()))
+
+  full = PredictionCpt$new(task, response = c(1, 2), extra = list(Kmax = c(2L, 2L)))$data
+  combined = as_prediction(c(empty, full))
+  expect_equal(combined$data$extra$Kmax, c(2L, 2L))
+})

@@ -18,8 +18,9 @@ learners of this package record per sequence in the prediction's \code{extra}
 data (\code{as.data.table(prediction)$Kmax}). Reading it from the prediction keeps
 the score right for wrapped learners (a \code{GraphLearner} prefixes parameter
 ids) and for resampled predictions whose folds were tuned to different caps.
-A prediction without it (e.g. built by hand) falls back to the \code{Kmax} of the
-learner passed to \verb{$score()}; scoring errors if neither gives one.
+A prediction built without it as a whole (e.g. by hand) falls back to the
+\code{Kmax} the learner passed to \verb{$score()} was trained with (or, untrained, is
+set to); scoring errors if neither gives one.
 
 The measure declares \code{"requires_task"} (to read the sequences and labels) and
 \code{"na_score"}, since an empty prediction, a non-finite predicted penalty, or a

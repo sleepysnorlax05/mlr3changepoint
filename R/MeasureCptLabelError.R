@@ -16,8 +16,9 @@
 #' data (`as.data.table(prediction)$Kmax`). Reading it from the prediction keeps
 #' the score right for wrapped learners (a `GraphLearner` prefixes parameter
 #' ids) and for resampled predictions whose folds were tuned to different caps.
-#' A prediction without it (e.g. built by hand) falls back to the `Kmax` of the
-#' learner passed to `$score()`; scoring errors if neither gives one.
+#' A prediction built without it as a whole (e.g. by hand) falls back to the
+#' `Kmax` the learner passed to `$score()` was trained with (or, untrained, is
+#' set to); scoring errors if neither gives one.
 #'
 #' The measure declares `"requires_task"` (to read the sequences and labels) and
 #' `"na_score"`, since an empty prediction, a non-finite predicted penalty, or a
@@ -107,12 +108,13 @@ MeasureCptLabelError = R6::R6Class(
 
       # Learner predictions record the Kmax each penalty was learned under per
       # row; a resampled prediction can mix caps across folds. Hand-built
-      # predictions fall back to the learner's own Kmax.
-      Kmax = prediction$data$extra$Kmax %??% rep(learner$param_set$values$Kmax, length(rows))
+      # predictions fall back to the learner's trained (else configured) Kmax.
+      fallback = learner$model$Kmax %??% learner$param_set$values$Kmax
+      Kmax = prediction$data$extra$Kmax %??% rep(fallback, length(rows))
       if (!test_integerish(Kmax, lower = 1, any.missing = FALSE, len = length(rows))) {
         stopf(paste0(
-          "label-error scoring needs a positive integer Kmax per sequence: ",
-          "the prediction records none and the learner sets none"
+          "label-error scoring needs a positive integer Kmax per sequence, ",
+          "but neither the prediction nor the learner supplies one"
         ))
       }
 
