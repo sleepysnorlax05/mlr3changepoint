@@ -26,6 +26,32 @@ test_that("train and predict round trip on the log(lambda) scale", {
 
   x = cpt_feature_matrix(cpt_extract_data(task), cols = learner$model$feature_names)
   expect_equal(p$response, log(as.numeric(predict(learner$model$fit, x))), tolerance = 1e-6)
+
+  # The fit lands inside every training interval only if the labels reached xgboost
+  # on the time scale and the margin is read back as log(lambda).
+  target_mat = cpt_target_intervals(task, 3L)
+  expect_true(all(
+    target_mat[, "min.log.lambda"] <= p$response & p$response <= target_mat[, "max.log.lambda"]
+  ))
+})
+
+test_that("training errors when no label gives a finite penalty limit", {
+  skip_if_not_installed("xgboost")
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  # A 1change label over an empty region is violated equally by every model.
+  task = toy_interval()
+  label = rep(list(data.table::data.table(start = 50, end = 50, label = "1change")), task$nrow)
+  open = TaskCpt$new(
+    id = "open",
+    backend = data.table::data.table(signal = cpt_extract_data(task)$sequence, label = label),
+    target = "label",
+    sequence = "signal",
+    label_type = "changepoint"
+  )
+  learner = lrn("changepoint.xgboost.aft", Kmax = 3L)
+  expect_error(learner$train(open), "no finite penalty limit")
 })
 
 test_that("predict works on unseen rows via the stored feature columns", {

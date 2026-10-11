@@ -111,6 +111,9 @@ LearnerCptXGBoostAFT = R6::R6Class(
       parts = cpt_extract_data(task)
       feature_mat = cpt_feature_matrix(parts)
       target_mat = cpt_target_intervals(task, Kmax)
+      if (!any(is.finite(target_mat))) {
+        stopf("labels give no finite penalty limit; every target interval is (-Inf, Inf)")
+      }
 
       # survival:aft takes interval-censored labels on the time scale, so exp() maps
       # each log(lambda) limit there: an open lower limit becomes 0 (left-censored)
