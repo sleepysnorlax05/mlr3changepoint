@@ -36,7 +36,8 @@
 #' changepoints (`label_type = "changepoint"`) or peaks (`label_type = "peak"`)
 #' the per-sequence segment path is searched over. The learner uses it to build
 #' the target penalty intervals at train time and does not forward it to the
-#' solver; the label-error measure reads it back from the learner to decode a
+#' solver. Each prediction records it per sequence in its `extra` data
+#' (`as.data.table(prediction)$Kmax`), so the label-error measure decodes the
 #' predicted penalty under the same cap.
 #'
 #' `max_depth` (`integer(1)`, default `Inf` for unlimited depth) and `margin` are
@@ -134,7 +135,7 @@ LearnerCptMMIT = R6::R6Class(
       # mmit() returns a bare "party" object, so generic predict() would dispatch to
       # partykit and return leaf node ids; the mmit method returns log(lambda).
       pred = mmit::predict.mmit(self$model$fit, cpt_mmit_frame(feature_mat))
-      list(response = as.numeric(pred))
+      cpt_prediction(pred, self$model$Kmax)
     }
   )
 )

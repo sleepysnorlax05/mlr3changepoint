@@ -34,7 +34,9 @@
 #' changepoints (`label_type = "changepoint"`) or peaks (`label_type = "peak"`)
 #' the per-sequence segment path is searched over, applied identically at train
 #' and predict time. The learner consumes it to build the target penalty
-#' intervals; it is not forwarded to the solver.
+#' intervals; it is not forwarded to the solver. Each prediction records it per
+#' sequence in its `extra` data (`as.data.table(prediction)$Kmax`), so the
+#' label-error measure decodes the predicted penalty under the same cap.
 #'
 #' `nrounds` (`integer(1)`, required) is the number of boosting rounds,
 #' initialized to `100`. `nthread` is initialized to `1`. The remaining
@@ -141,7 +143,7 @@ LearnerCptXGBoostAFT = R6::R6Class(
       feature_mat = cpt_feature_matrix(parts, cols = self$model$feature_names)
       # The AFT margin is the predicted log(time), which here is log(lambda) itself.
       pred = predict(self$model$fit, feature_mat, outputmargin = TRUE)
-      list(response = as.numeric(pred))
+      cpt_prediction(pred, self$model$Kmax)
     }
   )
 )
