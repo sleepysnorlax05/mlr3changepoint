@@ -78,10 +78,21 @@ test_that("changepoint path contains the null model and nested changes", {
 })
 
 test_that("a too-short sequence yields the null-model-only path", {
-  x = rnorm(2)
-  path = cpt_segment_path(x, 3L, "changepoint")
-  expect_equal(path$models$complexity, 1L)
-  expect_equal(nrow(path$predicted), 0L)
+  for (n in c(2L, 4L)) {
+    path = cpt_segment_path(seq_len(n), 3L, "changepoint")
+    expect_equal(path$models$complexity, 1L)
+    expect_equal(nrow(path$predicted), 0L)
+  }
+})
+
+test_that("Kmax caps the number of changes in the changepoint path", {
+  skip_if_not_installed("changepoint")
+
+  x = cpt_extract_data(toy())$sequence[[1L]]
+  for (Kmax in 1:3) {
+    path = cpt_segment_path(x, Kmax, "changepoint")
+    expect_equal(max(path$models$complexity) - 1L, Kmax)
+  }
 })
 
 test_that("peak path counts peaks per model", {

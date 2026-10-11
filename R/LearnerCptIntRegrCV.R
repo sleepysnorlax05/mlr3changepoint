@@ -94,7 +94,7 @@ LearnerCptIntRegrCV = R6::R6Class(
             })
           ),
           factor.regularization = p_dbl(lower = 1, default = 1.2, special_vals = list(NULL), tags = "train"),
-          Kmax = p_int(lower = 2L, tags = c("train", "required"))
+          Kmax = p_int(lower = 1L, tags = c("train", "required"))
         ),
         feature_types = "list",
         packages = c("penaltyLearning", "changepoint", "PeakSegOptimal", "PeakError"),
