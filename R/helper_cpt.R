@@ -47,6 +47,23 @@ cpt_assert_model_label_type = function(task, model) {
   }
 }
 
+#' Wrap predicted penalties with the complexity cap they were learned under
+#'
+#' A predicted `log(lambda)` only selects a model relative to the path searched
+#' up to `Kmax`, so every learner records its training `Kmax` per sequence in the
+#' prediction's `extra` data. mlr3 keeps `extra` through `predict()`, wrappers
+#' (`GraphLearner`, `AutoTuner`) and `resample()`, and the label-error measure
+#' reads the cap from there instead of from a learner's parameter values.
+#'
+#' @param response (`numeric()`)\cr Predicted `log(lambda)`, one per sequence.
+#' @param Kmax (`integer(1)`)\cr The trained model's complexity cap.
+#' @return The `list(response, extra)` a learner's `.predict()` returns.
+#' @noRd
+cpt_prediction = function(response, Kmax) {
+  response = as.numeric(response)
+  list(response = response, extra = list(Kmax = rep(Kmax, length(response))))
+}
+
 
 #' Build the per-sequence feature matrix for a TaskCpt
 #'
@@ -135,6 +152,9 @@ cpt_mmit_frame = function(feature_mat) {
 #' @return `list(models, predicted)` as described above.
 #' @noRd
 cpt_segment_path = function(signal, Kmax, label_type) {
+  # A NULL/NA cap would otherwise pass through min() in the changepoint branch
+  # and silently search up to n - 2 changes.
+  assert_int(Kmax, lower = 1)
   # Both solvers fail with obscure errors on missing values; catch that here once.
   if (anyNA(signal)) {
     stopf("sequence contains missing values")
