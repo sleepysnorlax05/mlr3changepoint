@@ -141,3 +141,28 @@ toy_weighted = function() {
   task$set_col_roles("w", roles = "weights_measure")
   task
 }
+
+# toy() plus a third sequence that carries no label.
+toy_unlabelled = function() {
+  backend = with_seed(36, { # nolint: object_usage_linter.
+    data.table::data.table(
+      signal = list(
+        c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9)),
+        rnorm(100, 0),
+        c(rnorm(50, 0), rnorm(50, 5))
+      ),
+      label = list(
+        data.table::data.table(start = c(90, 190), end = c(110, 210), label = c("1change", "1change")),
+        data.table::data.table(start = 1, end = 100, label = "0changes"),
+        data.table::data.table(start = numeric(), end = numeric(), label = character())
+      )
+    )
+  })
+  TaskCpt$new(
+    id = "toy_unlabelled",
+    backend = backend,
+    target = "label",
+    sequence = "signal",
+    label_type = "changepoint"
+  )
+}
