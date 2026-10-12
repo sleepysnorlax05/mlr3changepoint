@@ -39,7 +39,9 @@ All four learners train the same way up to the regressor.
 5.  Target intervals.
     [`penaltyLearning::targetIntervals()`](https://rdrr.io/pkg/penaltyLearning/man/targetIntervals.html)
     gives each sequence the interval of `log(lambda)` values with the
-    fewest label errors. One end of the interval may be infinite.
+    fewest label errors. If the fewest errors are reached on several
+    separate intervals, it keeps the widest. One end of the interval may
+    be infinite.
 6.  Regression. The regressor maps the features to the target intervals.
 
 At prediction time, the learner computes the same features and returns
@@ -66,9 +68,12 @@ is finite.
 Every learner requires `Kmax`. It caps model complexity: the largest
 number of changes (changepoint labels) or peaks (peak labels) on each
 model path, at training and at prediction. A penalty that would select a
-more complex model selects the `Kmax` model instead. Set it at least as
-large as the number of changes a labelled sequence needs. A larger
-`Kmax` makes each path slower to compute.
+more complex model selects instead the best model with at most `Kmax`
+changes or peaks at that penalty. This is often, but not always, the
+`Kmax` model: when the `Kmax` model lowers the loss only a little, a
+simpler one can win. Set it at least as large as the number of changes a
+labelled sequence needs. A larger `Kmax` makes each path slower to
+compute.
 
 | Learner | Other hyperparameters |
 |----|----|

@@ -35,10 +35,11 @@ k^\*(\lambda) = \arg\min\_{k} \\ \text{loss}(k) + \lambda k.
 
 The labels of a sequence are right for some models and wrong for others,
 so they define an interval of \log \lambda values with the fewest label
-errors: the target interval. A learner computes features x_i of each
-sequence i and fits a function f(x_i) that predicts \log \lambda_i
-inside its target interval. On a new sequence, the predicted penalty
-selects the model.
+errors: the target interval. If the fewest errors are reached on several
+separate intervals, the widest one is used. A learner computes features
+x_i of each sequence i and fits a function f(x_i) that predicts \log
+\lambda_i inside its target interval. On a new sequence, the predicted
+penalty selects the model.
 
 The package follows the same split.
 

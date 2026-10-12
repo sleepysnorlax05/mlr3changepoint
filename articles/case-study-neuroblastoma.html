@@ -92,8 +92,9 @@ to supervised changepoint detection</a>.</p>
 <h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
 </h2>
 <p>Each profile is a tumour sample measured on a microarray.
-<code>profiles</code> has the log ratio of each probe, which is
-proportional to copy number, with its chromosome and its position in
+<code>profiles</code> has the log ratio of each probe, the logarithm of
+its copy number relative to a reference, so it rises with copy number
+but is not proportional to it, with its chromosome and its position in
 base pairs. <code>annotations</code> has the labels an expert drew: a
 genomic region from <code>min</code> to <code>max</code>, labelled
 <code>breakpoint</code> (at least one change) or <code>normal</code> (no
@@ -220,10 +221,13 @@ for every learner, scored by label error and AUC.</p>
 <h2 id="an-unsupervised-baseline">An unsupervised baseline<a class="anchor" aria-label="anchor" href="#an-unsupervised-baseline"></a>
 </h2>
 <p>Without labels, a common choice is a BIC-style penalty, <span class="math inline">\lambda = \log n</span> for a sequence of <span class="math inline">n</span> probes, so <span class="math inline">\log
-\lambda = \log \log n</span>. It needs no training, so the baseline is a
-<code>PredictionCpt</code> built by hand for each test fold. A hand-made
-prediction records no <code>Kmax</code>, so <code>extra</code> gives it
-the same cap as the learners.</p>
+\lambda = \log \log n</span>. The loss here is the sum of squared
+residuals, so this matches BIC only when the noise variance is 1; for
+noise variance <span class="math inline">\sigma^2</span> BIC would use
+<span class="math inline">\sigma^2 \log n</span>. It needs no training,
+so the baseline is a <code>PredictionCpt</code> built by hand for each
+test fold. A hand-made prediction records no <code>Kmax</code>, so
+<code>extra</code> gives it the same cap as the learners.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n_probes</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lengths.html" class="external-link">lengths</a></span><span class="op">(</span><span class="va">signal</span><span class="op">)</span></span>
 <span><span class="va">folds</span> <span class="op">=</span> <span class="va">design</span><span class="op">$</span><span class="va">resampling</span><span class="op">[[</span><span class="fl">1L</span><span class="op">]</span><span class="op">]</span></span>

@@ -174,8 +174,8 @@ models:</p>
 <p>The labels of a sequence are right for some models and wrong for
 others, so they define an interval of <span class="math inline">\log
 \lambda</span> values with the fewest label errors: the target interval.
-A learner computes features <span class="math inline">x_i</span> of each
-sequence <span class="math inline">i</span> and fits a function <span class="math inline">f(x_i)</span> that predicts <span class="math inline">\log \lambda_i</span> inside its target interval. On
+If the fewest errors are reached on several separate intervals, the
+widest one is used. A learner computes features <span class="math inline">x_i</span> of each sequence <span class="math inline">i</span> and fits a function <span class="math inline">f(x_i)</span> that predicts <span class="math inline">\log \lambda_i</span> inside its target interval. On
 a new sequence, the predicted penalty selects the model.</p>
 <p>The package follows the same split.</p>
 <figure class="pkg-map"><div class="pkg-map-root"><code>mlr3changepoint</code></div>

@@ -115,7 +115,9 @@ labels, counts the false positives and false negatives of each
 model.</li>
 <li>Target intervals. <code><a href="https://rdrr.io/pkg/penaltyLearning/man/targetIntervals.html" class="external-link">penaltyLearning::targetIntervals()</a></code>
 gives each sequence the interval of <code>log(lambda)</code> values with
-the fewest label errors. One end of the interval may be infinite.</li>
+the fewest label errors. If the fewest errors are reached on several
+separate intervals, it keeps the widest. One end of the interval may be
+infinite.</li>
 <li>Regression. The regressor maps the features to the target
 intervals.</li>
 </ol>
@@ -175,10 +177,13 @@ is finite.</p>
 <p>Every learner requires <code>Kmax</code>. It caps model complexity:
 the largest number of changes (changepoint labels) or peaks (peak
 labels) on each model path, at training and at prediction. A penalty
-that would select a more complex model selects the <code>Kmax</code>
-model instead. Set it at least as large as the number of changes a
-labelled sequence needs. A larger <code>Kmax</code> makes each path
-slower to compute.</p>
+that would select a more complex model selects instead the best model
+with at most <code>Kmax</code> changes or peaks at that penalty. This is
+often, but not always, the <code>Kmax</code> model: when the
+<code>Kmax</code> model lowers the loss only a little, a simpler one can
+win. Set it at least as large as the number of changes a labelled
+sequence needs. A larger <code>Kmax</code> makes each path slower to
+compute.</p>
 <table class="table">
 <colgroup>
 <col width="28%">

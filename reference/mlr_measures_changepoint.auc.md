@@ -3,8 +3,8 @@
 Area under the ROC curve that
 [`penaltyLearning::ROChange()`](https://rdrr.io/pkg/penaltyLearning/man/ROChange.html)
 traces by adding one constant to every predicted penalty `log(lambda)`.
-Each shift selects one model per sequence, and the curve plots the false
-positive rate against the true positive rate, totalled over all label
+Each shift selects one model per sequence, and the curve plots the true
+positive rate against the false positive rate, totalled over all label
 regions. The models and their label errors come from the same pipeline
 and per-sequence `Kmax` as
 [mlr_measures_changepoint.label_error](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.label_error.md)

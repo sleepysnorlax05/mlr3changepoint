@@ -62,10 +62,14 @@ and includes additional column roles and properties for change point detection.<
 
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The Task table has one row for each labeled sequence, and two special column roles:</p><ul><li><p><code>sequence</code>: the column that identifies the sequence (e.g., time series)</p></li>
+    <p>The Task table has one row for each labeled sequence, and two special column roles:</p><ul><li><p><code>sequence</code>: a list column where each entry is the numeric signal of one sequence (e.g., a time series)</p></li>
 <li><p><code>target</code>: a list column where each entry is a <code>data.table(start, end, label)</code></p></li>
 </ul><p>The <code>label_type</code> can be either "changepoint" or "peak", depending on the type of detection problem.
 This is stored as an extra argument and can be accessed via the active binding <code>label_type</code>.</p>
+<p>Positions are 1-based indices into the signal, and the two label types read <code>start</code> and <code>end</code>
+differently. A change at <code>X</code> lies between positions <code>X</code> and <code>X + 1</code>, and a changepoint region
+holds the changes with <code>start &lt; X &lt;= end</code>. A peak region covers positions <code>start</code> to <code>end</code>, both
+included.</p>
     </div>
     <div class="section level2">
     <h2 id="super-classes">Super classes<a class="anchor" aria-label="anchor" href="#super-classes"></a></h2>

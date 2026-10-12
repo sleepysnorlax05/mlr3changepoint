@@ -116,18 +116,18 @@ dcast(timings, N ~ learner, value.var = "seconds")
 #> Key: <N>
 #>        N changepoint.intregrcv changepoint.mmif changepoint.mmit
 #>    <int>                 <num>            <num>            <num>
-#> 1:    10                 5.276            0.336            0.368
-#> 2:    20                 6.231            0.591            0.894
-#> 3:    40                 7.056            0.980            1.165
-#> 4:    80                 9.703            1.500            1.688
-#> 5:   160                14.334            2.569            2.760
+#> 1:    10                 5.092            0.337            0.369
+#> 2:    20                 6.335            0.594            0.900
+#> 3:    40                 7.220            0.961            1.173
+#> 4:    80                 9.987            1.534            1.732
+#> 5:   160                15.140            2.619            2.817
 #>    changepoint.xgboost.aft
 #>                      <num>
-#> 1:                   0.159
-#> 2:                   0.293
-#> 3:                   0.562
-#> 4:                   1.118
-#> 5:                   2.315
+#> 1:                   0.157
+#> 2:                   0.297
+#> 3:                   0.567
+#> 4:                   1.147
+#> 5:                   2.360
 ```
 
 The plot uses log scales on both axes, so a power law `seconds ~ N^b` is
@@ -155,10 +155,10 @@ The slope of a least-squares line through the log-log points estimates
 timings[, .(slope = coef(lm(log(seconds) ~ log(N)))[[2L]]), by = learner]
 #>                    learner     slope
 #>                     <char>     <num>
-#> 1:   changepoint.intregrcv 0.3522817
-#> 2: changepoint.xgboost.aft 0.9659775
-#> 3:        changepoint.mmit 0.6730749
-#> 4:        changepoint.mmif 0.7213080
+#> 1:   changepoint.intregrcv 0.3800829
+#> 2: changepoint.xgboost.aft 0.9769231
+#> 3:        changepoint.mmit 0.6809376
+#> 4:        changepoint.mmif 0.7285155
 ```
 
 A slope near 1 means training time grows linearly with the number of

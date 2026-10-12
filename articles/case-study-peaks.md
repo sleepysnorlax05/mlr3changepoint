@@ -16,7 +16,7 @@ library(ggplot2)
 
 Each sequence has 500 Poisson counts. The background rate is drawn
 between 1 and 5, so the right penalty differs between sequences. Odd
-sequences have a peak of 40 to 80 positions at six times the background
+sequences have a peak of 41 to 81 positions at six times the background
 rate, labelled with `peakStart` and `peakEnd` regions around its edges
 and `noPeaks` regions on either side. Even sequences are labelled
 `noPeaks` from end to end.
