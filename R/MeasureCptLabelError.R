@@ -21,9 +21,10 @@
 #' `Kmax` the learner passed to `$score()` was trained with (or, untrained, is
 #' set to); scoring errors if neither gives one.
 #'
-#' The measure declares `"requires_task"` (to read the sequences and labels) and
-#' `"na_score"`, since an empty prediction, a non-finite predicted penalty, or a
-#' test set without labels scores `NA`.
+#' Sequences without labels can be neither right nor wrong, so they are left out
+#' of the score. The measure declares `"requires_task"` (to read the sequences and
+#' labels) and `"na_score"`, since an empty prediction, a non-finite predicted
+#' penalty, or a test set without any labels scores `NA`.
 #'
 #' @details
 #' The score micro-averages over sequences: `sum(w * errors) / sum(w * n_labels)`,
@@ -104,12 +105,19 @@ MeasureCptLabelError = R6::R6Class(
 #' Label-error rate of a prediction, shared by the error and accuracy measures
 #' @noRd
 cpt_label_error = function(prediction, task, learner = NULL, weights = NULL) {
-  rows = prediction$row_ids
-  response = prediction$response
-  weights = weights %??% rep(1, length(rows))
-  if (length(rows) == 0L || any(!is.finite(response))) {
+  if (length(prediction$row_ids) == 0L || any(!is.finite(prediction$response))) {
     return(NA_real_)
   }
+  # Weights are aligned to the full prediction; keep those of the labelled rows.
+  weights = weights %??% rep(1, length(prediction$row_ids))
+  labelled = cpt_labelled_prediction(prediction)
+  if (is.null(labelled)) {
+    return(NA_real_)
+  }
+  weights = weights[prediction$row_ids %in% labelled$row_ids]
+  prediction = labelled
+  rows = prediction$row_ids
+  response = prediction$response
 
   me = cpt_prediction_errors(prediction, task, learner = learner)
   me$log_lambda = response[match(me$problem, rows)]

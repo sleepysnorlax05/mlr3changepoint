@@ -23,9 +23,10 @@ A prediction built without it as a whole (e.g. by hand) falls back to the
 \code{Kmax} the learner passed to \verb{$score()} was trained with (or, untrained, is
 set to); scoring errors if neither gives one.
 
-The measure declares \code{"requires_task"} (to read the sequences and labels) and
-\code{"na_score"}, since an empty prediction, a non-finite predicted penalty, or a
-test set without labels scores \code{NA}.
+Sequences without labels can be neither right nor wrong, so they are left out
+of the score. The measure declares \code{"requires_task"} (to read the sequences and
+labels) and \code{"na_score"}, since an empty prediction, a non-finite predicted
+penalty, or a test set without any labels scores \code{NA}.
 }
 \details{
 The score micro-averages over sequences: \code{sum(w * errors) / sum(w * n_labels)},

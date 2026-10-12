@@ -329,7 +329,7 @@ cpt_errors_peak = function(sm, predicted, regions) {
       # rep() keeps the chrom column valid for 0-row inputs (the 0-peak model).
       reg_df = data.frame(
         chrom = rep("chr", nrow(reg_p)),
-        chromStart = reg_p[["start"]] - 1L,
+        chromStart = reg_p[["start"]] - 1,
         chromEnd = reg_p[["end"]],
         annotation = reg_p[["label"]]
       )
@@ -414,11 +414,19 @@ cpt_label_errors = function(task, Kmax, rows = task$row_ids) {
 
   sm = rbindlist(sm_list)
   predicted = rbindlist(predicted_list)
-  regions = rbindlist(Map(
-    function(id, tab) data.table(problem = id, tab),
-    ids,
-    parts$target
-  ))
+  # A sequence without labels contributes no region: data.table(problem = id, tab)
+  # would turn its 0-row table into one all-NA row that the scorers reject.
+  region_list = list()
+  for (i in seq_along(ids)) {
+    tab = parts$target[[i]]
+    if (nrow(tab)) {
+      region_list[[length(region_list) + 1L]] = data.table(problem = ids[i], tab)
+    }
+  }
+  if (length(region_list) == 0L) {
+    stopf("none of the selected sequences carries a label region")
+  }
+  regions = rbindlist(region_list)
 
   cpt_model_errors(sm, predicted, regions, label_type)
 }
@@ -446,6 +454,10 @@ cpt_target_intervals = function(task, Kmax) {
   ti = ti[match(ids, ti$problem), ]
   target = as.matrix(ti[, c("min.log.lambda", "max.log.lambda")])
   rownames(target) = as.character(ids)
+  # labelError() leaves sequences without labels out; they constrain no penalty.
+  unlabelled = is.na(target[, "min.log.lambda"])
+  target[unlabelled, "min.log.lambda"] = -Inf
+  target[unlabelled, "max.log.lambda"] = Inf
   target
 }
 
@@ -515,14 +527,39 @@ cpt_prediction_errors = function(prediction, task, learner = NULL, Kmax = NULL) 
 #'   a false negative), where the curve is undefined.
 #' @noRd
 cpt_roc = function(prediction, task, learner = NULL, Kmax = NULL) {
+  prediction = cpt_labelled_prediction(prediction)
+  if (is.null(prediction)) {
+    return(NULL)
+  }
   me = cpt_prediction_errors(prediction, task, learner, Kmax)
   if (sum(me$possible.fp) == 0 || sum(me$possible.fn) == 0) {
     return(NULL)
   }
   pred = data.table(problem = prediction$row_ids, pred.log.lambda = prediction$response)
-  # labelError() drops sequences without labels; they add no ROC point.
-  pred = pred[pred$problem %in% me$problem, ]
   penaltyLearning::ROChange(me, pred, problem.vars = "problem")
+}
+
+#' Drop the predicted sequences that carry no label
+#'
+#' A sequence without labels can be neither right nor wrong, so every measure
+#' scores only the labelled ones.
+#'
+#' @param prediction ([PredictionCpt]).
+#' @return A filtered copy of `prediction`, or `NULL` if no sequence has labels.
+#' @noRd
+cpt_labelled_prediction = function(prediction) {
+  truth = prediction$truth
+  keep = logical(length(truth))
+  for (i in seq_along(truth)) {
+    keep[i] = nrow(truth[[i]]) > 0L
+  }
+  if (!any(keep)) {
+    return(NULL)
+  }
+  if (all(keep)) {
+    return(prediction)
+  }
+  prediction$clone(deep = TRUE)$filter(prediction$row_ids[keep])
 }
 
 #' Segment one sequence at a single learned penalty (predict-side)
