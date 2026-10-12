@@ -100,7 +100,7 @@ scores
 
 ## An unsupervised baseline
 
-Without labels, a common choice is a BIC-style penalty, $\lambda = \log n$ for a sequence of $n$ probes, so $\log \lambda = \log \log n$. It needs no training, so the baseline is a `PredictionCpt` built by hand for each test fold. A hand-made prediction records no `Kmax`, so `extra` gives it the same cap as the learners.
+Without labels, a common choice is a BIC-style penalty, $\lambda = \log n$ for a sequence of $n$ probes, so $\log \lambda = \log \log n$. The loss here is the sum of squared residuals, so this matches BIC only when the noise variance is 1; for noise variance $\sigma^2$ BIC would use $\sigma^2 \log n$. It needs no training, so the baseline is a `PredictionCpt` built by hand for each test fold. A hand-made prediction records no `Kmax`, so `extra` gives it the same cap as the learners.
 
 ```{r}
 n_probes = lengths(signal)
