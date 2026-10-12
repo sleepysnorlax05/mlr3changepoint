@@ -53,7 +53,7 @@
 #'
 #' @family Learner
 #'
-#' @examples
+#' @examplesIf mlr3misc::require_namespaces(c("mmit", "future.apply", "penaltyLearning", "changepoint"), quietly = TRUE)
 #' library(data.table)
 #'
 #' set.seed(36)

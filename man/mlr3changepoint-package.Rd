@@ -11,6 +11,7 @@ Extends the 'mlr3' package with weakly supervised change point detection. Provid
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://sleepysnorlax05.github.io/mlr3changepoint/}
   \item \url{https://github.com/sleepysnorlax05/mlr3changepoint}
   \item Report bugs at \url{https://github.com/sleepysnorlax05/mlr3changepoint/issues}
 }

@@ -42,7 +42,7 @@
 #'
 #' @family Measure
 #'
-#' @examples
+#' @examplesIf mlr3misc::require_namespaces(c("penaltyLearning", "changepoint"), quietly = TRUE)
 #' library(data.table)
 #'
 #' # Alternate change-bearing and flat sequences so the learner's internal
