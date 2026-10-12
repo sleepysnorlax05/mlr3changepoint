@@ -1,0 +1,104 @@
+# Peak detection in count data
+
+This case study detects peaks in simulated count data. Every sequence is
+background noise, and every other one also has a burst of high counts.
+The labels mark where peaks start and end, and where there are none.
+
+``` r
+
+library(mlr3)
+library(mlr3changepoint)
+library(data.table)
+library(ggplot2)
+```
+
+## Simulated counts
+
+Each sequence has 500 Poisson counts. The background rate is drawn
+between 1 and 5, so the right penalty differs between sequences. Odd
+sequences have a peak of 40 to 80 positions at six times the background
+rate, labelled with `peakStart` and `peakEnd` regions around its edges
+and `noPeaks` regions on either side. Even sequences are labelled
+`noPeaks` from end to end.
+
+``` r
+
+set.seed(2)
+n_seq = 40L
+n_data = 500L
+counts = vector("list", n_seq)
+label = vector("list", n_seq)
+for (i in seq_len(n_seq)) {
+  rate = runif(1L, 1, 5)
+  y = rpois(n_data, rate)
+  if (i %% 2L == 1L) {
+    peak_start = sample(150:300, 1L)
+    peak_end = peak_start + sample(40:80, 1L)
+    y[peak_start:peak_end] = rpois(peak_end - peak_start + 1L, 6 * rate)
+    label[[i]] = data.table(
+      start = c(1, peak_start - 10, peak_end - 10, peak_end + 30),
+      end = c(peak_start - 30, peak_start + 10, peak_end + 10, n_data),
+      label = c("noPeaks", "peakStart", "peakEnd", "noPeaks")
+    )
+  } else {
+    label[[i]] = data.table(start = 1, end = n_data, label = "noPeaks")
+  }
+  counts[[i]] = y
+}
+task = TaskCpt$new(
+  id = "peaks", backend = data.table(counts = counts, label = label),
+  target = "label", sequence = "counts", label_type = "peak"
+)
+```
+
+The first four sequences show both kinds.
+
+``` r
+
+autoplot(task$clone()$filter(1:4))
+```
+
+![Four panels of counts. Odd panels have a burst of high counts with
+shaded peakStart and peakEnd regions at its edges and noPeaks regions on
+either side. Even panels are flat with one noPeaks
+region.](case-study-peaks_files/figure-html/unnamed-chunk-3-1.png)
+
+## Train and test
+
+[`partition()`](https://mlr3.mlr-org.com/reference/partition.html) holds
+out 30% of the sequences for testing. `Kmax = 3` allows up to three
+peaks per sequence, more than the labels need.
+
+``` r
+
+set.seed(1)
+sets = partition(task, ratio = 0.7)
+learner = lrn("changepoint.intregrcv", Kmax = 3L)
+learner$train(task, row_ids = sets$train)
+prediction = learner$predict(task, row_ids = sets$test)
+prediction$score(msrs(c("changepoint.label_error", "changepoint.auc")), task = task)
+#> changepoint.label_error         changepoint.auc 
+#>                       0                       1
+```
+
+The scores are on the twelve test sequences, which the learner did not
+see.
+
+## Decoded peaks
+
+For peak tasks,
+[`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+draws each predicted peak as a horizontal segment at its mean count.
+Here it shows four test sequences.
+
+``` r
+
+autoplot(learner$predict(task, row_ids = head(sets$test, 4L)), task = task)
+```
+
+![Four test sequences of counts with their labelled regions and
+horizontal segments at the predicted
+peaks.](case-study-peaks_files/figure-html/unnamed-chunk-5-1.png)
+
+A segment that starts inside the `peakStart` region and ends inside the
+`peakEnd` region gets both labels right.
