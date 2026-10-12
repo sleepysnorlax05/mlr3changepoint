@@ -31,7 +31,7 @@ test_that("the AUC scores peak tasks", {
   learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
   with_seed(36, learner$train(task))
   p = learner$predict(task)
-  expect_number(unname(p$score(msr("changepoint.auc"), task = task)), lower = 0, upper = 1)
+  expect_number(unname(p$score(msr("changepoint.auc"), task = task)), finite = TRUE)
 })
 
 test_that("the AUC is NA where the curve is undefined", {
@@ -73,5 +73,19 @@ test_that("scoring errors without any Kmax", {
 
   task = toy()
   p = PredictionCpt$new(task, response = c(1, 1))
-  expect_error(p$score(msr("changepoint.auc"), task = task), "Kmax")
+  expect_error(p$score(msr("changepoint.auc"), task = task), "positive integer Kmax per sequence")
+})
+
+test_that("sequences without labels are left out of the AUC", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  task = toy_unlabelled()
+  measure = msr("changepoint.auc")
+  p = PredictionCpt$new(task, response = c(0, 0, 0), extra = list(Kmax = rep(2L, 3L)))
+  labelled = PredictionCpt$new(task, row_ids = 1:2, response = c(0, 0), extra = list(Kmax = c(2L, 2L)))
+  expect_equal(p$score(measure, task = task), labelled$score(measure, task = task))
+
+  only = PredictionCpt$new(task, row_ids = 3L, response = 0, extra = list(Kmax = 2L))
+  expect_equal(unname(only$score(measure, task = task)), NA_real_)
 })

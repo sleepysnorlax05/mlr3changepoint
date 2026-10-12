@@ -126,3 +126,20 @@ test_that("a prediction without Kmax falls back to the learner's trained cap", {
   learner$param_set$values$Kmax = 3L
   expect_equal(bare$score(measure, task = task, learner = learner), expected)
 })
+
+test_that("sequences without labels are left out of the label error", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  task = toy_unlabelled()
+  measure = msr("changepoint.label_error")
+  p = PredictionCpt$new(task, response = c(0, 0, 0), weights = c(1, 2, 5), extra = list(Kmax = rep(2L, 3L)))
+  labelled = PredictionCpt$new(
+    task,
+    row_ids = 1:2, response = c(0, 0), weights = c(1, 2), extra = list(Kmax = c(2L, 2L))
+  )
+  expect_equal(p$score(measure, task = task), labelled$score(measure, task = task))
+
+  only = PredictionCpt$new(task, row_ids = 3L, response = 0, extra = list(Kmax = 2L))
+  expect_equal(unname(only$score(measure, task = task)), NA_real_)
+})
