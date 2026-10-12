@@ -6,6 +6,7 @@
 #' Percentage of label regions the predicted segmentation gets wrong: the total
 #' false positives plus false negatives across all sequences, divided by the
 #' total number of labels (Hocking et al.'s percent-incorrect-labels metric).
+#' [mlr_measures_changepoint.label_accuracy] is its complement.
 #'
 #' A [PredictionCpt] stores only the predicted penalty `log(lambda)` per
 #' sequence, not a segmentation. This measure re-derives the model path each
@@ -20,9 +21,10 @@
 #' `Kmax` the learner passed to `$score()` was trained with (or, untrained, is
 #' set to); scoring errors if neither gives one.
 #'
-#' The measure declares `"requires_task"` (to read the sequences and labels) and
-#' `"na_score"`, since an empty prediction, a non-finite predicted penalty, or a
-#' test set without labels scores `NA`.
+#' Sequences without labels can be neither right nor wrong, so they are left out
+#' of the score. The measure declares `"requires_task"` (to read the sequences and
+#' labels) and `"na_score"`, since an empty prediction, a non-finite predicted
+#' penalty, or a test set without any labels scores `NA`.
 #'
 #' @details
 #' The score micro-averages over sequences: `sum(w * errors) / sum(w * n_labels)`,
@@ -40,7 +42,7 @@
 #'
 #' @family Measure
 #'
-#' @examples
+#' @examplesIf mlr3misc::require_namespaces(c("penaltyLearning", "changepoint"), quietly = TRUE)
 #' library(data.table)
 #'
 #' # Alternate change-bearing and flat sequences so the learner's internal
@@ -95,56 +97,43 @@ MeasureCptLabelError = R6::R6Class(
   ),
   private = list(
     .score = function(prediction, task, learner = NULL, weights = NULL, ...) {
-      rows = prediction$row_ids
-      response = prediction$response
-      weights = weights %??% rep(1, length(rows))
-
-      if (length(rows) == 0L) {
-        return(NA_real_)
-      }
-      if (any(!is.finite(response))) {
-        return(NA_real_)
-      }
-
-      # Learner predictions record the Kmax each penalty was learned under per
-      # row; a resampled prediction can mix caps across folds. Hand-built
-      # predictions fall back to the learner's trained (else configured) Kmax.
-      fallback = learner$model$Kmax %??% learner$param_set$values$Kmax
-      Kmax = prediction$data$extra$Kmax %??% rep(fallback, length(rows))
-      if (!test_integerish(Kmax, lower = 1, any.missing = FALSE, len = length(rows))) {
-        stopf(paste0(
-          "label-error scoring needs a positive integer Kmax per sequence, ",
-          "but neither the prediction nor the learner supplies one"
-        ))
-      }
-
-      me = list()
-      for (k in unique(Kmax)) {
-        me[[length(me) + 1L]] = cpt_label_errors(task, k, rows[Kmax == k])
-      }
-      me = rbindlist(me)
-      me$log_lambda = response[match(me$problem, rows)]
-      sel = me[cpt_is_selected(me, me$log_lambda), ]
-
-      if (!setequal(sel$problem, rows) || anyDuplicated(sel$problem)) {
-        stopf(
-          "label-error scoring selected %i models for %i sequences",
-          nrow(sel),
-          length(rows)
-        )
-      }
-
-      errors = sel$errors[match(rows, sel$problem)]
-      n_labels = integer(length(rows))
-      for (i in seq_along(rows)) {
-        n_labels[i] = nrow(prediction$truth[[i]])
-      }
-
-      denom = sum(weights * n_labels)
-      if (denom == 0) {
-        return(NA_real_)
-      }
-      sum(weights * errors) / denom
+      cpt_label_error(prediction, task, learner, weights)
     }
   )
 )
+
+#' Label-error rate of a prediction, shared by the error and accuracy measures
+#' @noRd
+cpt_label_error = function(prediction, task, learner = NULL, weights = NULL) {
+  if (length(prediction$row_ids) == 0L || any(!is.finite(prediction$response))) {
+    return(NA_real_)
+  }
+  # Weights are aligned to the full prediction; keep those of the labelled rows.
+  weights = weights %??% rep(1, length(prediction$row_ids))
+  labelled = cpt_labelled_prediction(prediction)
+  if (is.null(labelled)) {
+    return(NA_real_)
+  }
+  weights = weights[prediction$row_ids %in% labelled$row_ids]
+  prediction = labelled
+  rows = prediction$row_ids
+  response = prediction$response
+
+  me = cpt_prediction_errors(prediction, task, learner = learner)
+  me$log_lambda = response[match(me$problem, rows)]
+  sel = me[cpt_is_selected(me, me$log_lambda), ]
+  if (!setequal(sel$problem, rows) || anyDuplicated(sel$problem)) {
+    stopf("label-error scoring selected %i models for %i sequences", nrow(sel), length(rows))
+  }
+
+  errors = sel$errors[match(rows, sel$problem)]
+  n_labels = integer(length(rows))
+  for (i in seq_along(rows)) {
+    n_labels[i] = nrow(prediction$truth[[i]])
+  }
+  denom = sum(weights * n_labels)
+  if (denom == 0) {
+    return(NA_real_)
+  }
+  sum(weights * errors) / denom
+}

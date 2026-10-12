@@ -50,6 +50,7 @@ there for their meaning and defaults.
 }
 
 \examples{
+\dontshow{if (mlr3misc::require_namespaces(c("xgboost", "penaltyLearning", "changepoint"), quietly = TRUE)) withAutoprint(\{ # examplesIf}
 library(data.table)
 
 set.seed(36)
@@ -76,7 +77,7 @@ learner = lrn("changepoint.xgboost.aft", Kmax = 3L)
 learner$train(task)
 learner$predict(task)
 }
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other Learner: 

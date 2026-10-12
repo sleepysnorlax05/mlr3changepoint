@@ -1,6 +1,6 @@
 Package: mlr3changepoint
 Title: Weakly Supervised Change Point Detection for 'mlr3'
-Version: 0.1.0.9000
+Version: 0.1.0
 Authors@R: c(
     person("Huy Nhat Minh", "Nguyen", , "sleepysnorlax0115@gmail.com", role = c("cre", "aut")),
     person("Toby", "Hocking", , "toby.hocking@r-project.org", role = "aut"),
@@ -11,7 +11,8 @@ Description: Extends the 'mlr3' package with weakly supervised change point
     detection. Provides tasks, learners, and prediction objects for change
     point detection within the mlr3 framework.
 License: LGPL-3
-URL: https://github.com/sleepysnorlax05/mlr3changepoint
+URL: https://sleepysnorlax05.github.io/mlr3changepoint/,
+    https://github.com/sleepysnorlax05/mlr3changepoint
 BugReports: https://github.com/sleepysnorlax05/mlr3changepoint/issues
 Depends:
     mlr3 (>= 1.0.0),
@@ -23,6 +24,7 @@ Imports:
     paradox (>= 1.0.1),
     R6 (>= 2.4.1)
 Suggests:
+    spelling,
     changepoint,
     future.apply,
     ggplot2,
@@ -36,11 +38,11 @@ Suggests:
     testthat (>= 3.3.0),
     xgboost
 Remotes:
-    mlr-org/mlr3,
-    mlr-org/paradox,
-    mlr-org/mlr3misc,
     sleepysnorlax05/mmit/Rpackage
+Config/Needs/website:
+    neuroblastoma
 Config/testthat/edition: 3
 Encoding: UTF-8
+Language: en-US
 Roxygen: list(markdown = TRUE, r6 = TRUE)
 RoxygenNote: 7.3.3

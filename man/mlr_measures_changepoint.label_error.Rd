@@ -8,6 +8,7 @@
 Percentage of label regions the predicted segmentation gets wrong: the total
 false positives plus false negatives across all sequences, divided by the
 total number of labels (Hocking et al.'s percent-incorrect-labels metric).
+\link{mlr_measures_changepoint.label_accuracy} is its complement.
 
 A \link{PredictionCpt} stores only the predicted penalty \code{log(lambda)} per
 sequence, not a segmentation. This measure re-derives the model path each
@@ -22,9 +23,10 @@ A prediction built without it as a whole (e.g. by hand) falls back to the
 \code{Kmax} the learner passed to \verb{$score()} was trained with (or, untrained, is
 set to); scoring errors if neither gives one.
 
-The measure declares \code{"requires_task"} (to read the sequences and labels) and
-\code{"na_score"}, since an empty prediction, a non-finite predicted penalty, or a
-test set without labels scores \code{NA}.
+Sequences without labels can be neither right nor wrong, so they are left out
+of the score. The measure declares \code{"requires_task"} (to read the sequences and
+labels) and \code{"na_score"}, since an empty prediction, a non-finite predicted
+penalty, or a test set without any labels scores \code{NA}.
 }
 \details{
 The score micro-averages over sequences: \code{sum(w * errors) / sum(w * n_labels)},
@@ -43,6 +45,7 @@ This measure can be retrieved via \link[mlr3:mlr_measures]{mlr3::mlr_measures} w
 }
 
 \examples{
+\dontshow{if (mlr3misc::require_namespaces(c("penaltyLearning", "changepoint"), quietly = TRUE)) withAutoprint(\{ # examplesIf}
 library(data.table)
 
 # Alternate change-bearing and flat sequences so the learner's internal
@@ -75,11 +78,13 @@ learner$train(task)
 prediction = learner$predict(task)
 prediction$score(msr("changepoint.label_error"), task = task)
 }
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other Measure: 
-\code{\link{MeasureCpt}}
+\code{\link{MeasureCpt}},
+\code{\link{mlr_measures_changepoint.auc}},
+\code{\link{mlr_measures_changepoint.label_accuracy}}
 }
 \concept{Measure}
 \section{Super classes}{

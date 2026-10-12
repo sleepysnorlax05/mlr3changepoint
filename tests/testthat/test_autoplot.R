@@ -125,3 +125,31 @@ test_that("autoplot.PredictionCpt validates its inputs", {
   task$filter(1L)
   expect_error(ggplot2::autoplot(p, task = task, Kmax = 2L), "subset")
 })
+
+test_that("autoplot.PredictionCpt(type = 'roc') draws the curve the AUC integrates", {
+  skip_if_not_installed("ggplot2")
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  task = toy()
+  p = PredictionCpt$new(task, response = c(0, 0), extra = list(Kmax = c(2L, 2L)))
+  g = ggplot2::autoplot(p, task = task, type = "roc")
+  curve = ggplot2::layer_data(g, 1L)
+  point = ggplot2::layer_data(g, 2L)
+  expect_gt(nrow(curve), 1L)
+  expect_equal(nrow(point), 1L)
+  # The point is the curve's predicted threshold, where every penalty is unshifted.
+  roc = penaltyLearning::ROChange(
+    cpt_label_errors(task, 2L),
+    data.table::data.table(problem = task$row_ids, pred.log.lambda = c(0, 0)),
+    problem.vars = "problem"
+  )
+  predicted = roc$thresholds[roc$thresholds$threshold == "predicted", ]
+  expect_equal(c(point$x, point$y), c(predicted$FPR, predicted$TPR))
+  auc = unname(p$score(msr("changepoint.auc"), task = task))
+  expect_equal(ggplot2::get_labs(g)$title, sprintf("AUC = %.3f", auc))
+
+  negative_only = PredictionCpt$new(task, row_ids = 2L, response = 0, extra = list(Kmax = 2L))
+  expect_error(ggplot2::autoplot(negative_only, task = task, type = "roc"), "positive and negative")
+  expect_error(ggplot2::autoplot(p, task = task, type = "pr"), "Must be element")
+})

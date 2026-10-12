@@ -81,3 +81,29 @@ test_that("training is stable across seeds", {
   r2 = with_seed(999L, learner$train(task)$predict(task)$response)
   expect_equal(r1, r2)
 })
+
+test_that("sequences with an open target are left out of the fit", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("changepoint")
+
+  # An 11th sequence whose 1change label lies past its end: every model gets it
+  # wrong, so its target is (-Inf, Inf), which IntervalRegressionCV() rejects.
+  base = toy_interval()
+  parts = cpt_extract_data(base)
+  # Its signal looks like the training ones so that its features stay finite.
+  extra_signal = with_seed(1, c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9))) # nolint: object_usage_linter.
+  signal = c(parts$sequence, list(extra_signal))
+  label = c(parts$target, list(data.table::data.table(start = 1000, end = 1001, label = "1change")))
+  task = TaskCpt$new(
+    id = "open_row",
+    backend = data.table::data.table(signal = signal, label = label),
+    target = "label",
+    sequence = "signal",
+    label_type = "changepoint"
+  )
+  expect_equal(unname(cpt_target_intervals(task, 3L)[11L, ]), c(-Inf, Inf))
+
+  learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
+  learner$train(task)
+  expect_numeric(learner$predict(task)$response, len = 11L, any.missing = FALSE)
+})

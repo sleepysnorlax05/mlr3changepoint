@@ -162,7 +162,6 @@ src/*.so
 src/*.dll
 
 # CRAN
-cran-comments.md
 CRAN-RELEASE
 CRAN-SUBMISSION
 
