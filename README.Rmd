@@ -8,7 +8,9 @@ output: github_document
 lgr::get_logger("mlr3")$set_threshold("warn")
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
 )
 options(width = 100, datatable.print.class = FALSE)
 ```
@@ -16,142 +18,96 @@ options(width = 100, datatable.print.class = FALSE)
 # mlr3changepoint
 
 <!-- badges: start -->
-[![r-cmd-check](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/R-CMD-check.yaml)
 [![codecov](https://codecov.io/github/sleepysnorlax05/mlr3changepoint/graph/badge.svg?token=AGF9QGIRKY)](https://codecov.io/github/sleepysnorlax05/mlr3changepoint)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![StackOverflow](https://img.shields.io/badge/stackoverflow-mlr3-orange.svg)](https://stackoverflow.com/questions/tagged/mlr3)
-[![Mattermost](https://img.shields.io/badge/chat-mattermost-orange.svg)](https://lmmisld-lmu-stats-slds.srv.mwn.de/mlr_invite/)
+[![pkgdown](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/pkgdown.yaml/badge.svg)](https://sleepysnorlax05.github.io/mlr3changepoint/)
 <!-- badges: end -->
 
-*mlr3changepoint* extends the [mlr3](https://github.com/mlr-org/mlr3) ecosystem with
-**weakly supervised change point detection**. It registers a new `"changepoint"` task
-type together with the surrounding infrastructure — tasks, learners, and prediction
-objects — so that change point detectors can be trained, resampled, and benchmarked
-with the standard mlr3 machinery.
+`mlr3changepoint` adds weakly supervised changepoint detection to [mlr3](https://mlr3.mlr-org.com). A changepoint or peak model needs a penalty that sets how many changes it keeps. The package learns that penalty for each sequence from labelled examples, as a function of features of the sequence. Its tasks, learners, predictions and measures work with `resample()`, `benchmark()` and tuning.
 
-Unlike classical, fully supervised detection, *weak supervision* means the targets are
-**labelled regions** of a sequence rather than a label for every observation. Each label
-is an interval `(start, end, label)` marking a stretch of the sequence that should contain
-a given number of changes (e.g. `"1change"`) or a peak. This is the setup used by
-[penaltyLearning](https://cran.r-project.org/package=penaltyLearning) and related
-peak-detection work.
+The supervision is weak. Each label covers a region of a sequence and says how many changes it holds, for example `1change` on positions 90 to 110 or `0changes` on a flat stretch. A label does not give the position of a change or a value for each point. Changepoint labels follow [penaltyLearning](https://cran.r-project.org/package=penaltyLearning), and peak labels follow [PeakError](https://cran.r-project.org/package=PeakError).
 
-> **Note**
-> This package is under active development as part of Google Summer of Code 2026.
-> The API is experimental and may change.
+The package is developed during Google Summer of Code 2026, and its API may still change.
 
 ## Installation
 
-*mlr3changepoint* is not yet on CRAN. Install the development version from GitHub:
-
 ```r
-# install.packages("remotes")
-remotes::install_github("sleepysnorlax05/mlr3changepoint")
+# install.packages("pak")
+pak::pak("sleepysnorlax05/mlr3changepoint", dependencies = TRUE)
 ```
 
-## Feature Overview
+`dependencies = TRUE` also installs the solvers and regressors the learners use. The MMIT and MMIF learners need the mmit package, which is not on CRAN. Its upstream sources no longer compile on macOS and Windows, so pak installs a patched copy from `sleepysnorlax05/mmit/Rpackage`.
 
-The package adds a `"changepoint"` task type to mlr3's reflections, supporting two
-flavours of weak labels, selected via `label_type`:
+## Learners and measures
 
-- `"changepoint"` — regions annotated with the number of changes they contain
-  (penaltyLearning-style).
-- `"peak"` — regions annotated as peak or background (peak-detection style).
+| Learner | Regressor |
+|---------|-----------|
+| `changepoint.intregrcv` | L1-regularised linear interval regression (penaltyLearning) |
+| `changepoint.xgboost.aft` | Gradient boosted trees with the accelerated failure time loss (xgboost) |
+| `changepoint.mmit` | Maximum margin interval tree (mmit) |
+| `changepoint.mmif` | Maximum margin interval forest (mmit) |
 
-The current building blocks:
-
-| Class | Role | Status |
-| :--- | :--- | :--- |
-| `TaskCpt` | Weakly supervised change point task — one row per labelled sequence | Available |
-| `LearnerCpt` | Abstract base class for change point learners | Base class |
-| `PredictionCpt` / `MeasureCpt` | Prediction container and evaluation measures | Planned |
-
-## Task Structure
-
-A `TaskCpt` stores **one row per labelled sequence** and uses two special column roles:
-
-- a **`sequence`** column holding the raw signal (a list column, one numeric vector
-  per sequence);
-- a **`target`** list column, where each entry is a `data.table(start, end, label)` of
-  labelled regions.
-
-`task$truth()` returns the labelled regions and `task$label_type` reports whether the
-task carries `"changepoint"` or `"peak"` labels.
+| Measure | What it scores |
+|---------|----------------|
+| `changepoint.label_error` | Share of labelled regions with a false positive or false negative |
+| `changepoint.label_accuracy` | One minus the label error |
+| `changepoint.auc` | Area under the ROC curve traced by shifting all predicted penalties |
 
 ## Example
 
-```{r example}
+Ten toy sequences: odd ones change mean twice and carry a `1change` label around each change, even ones are flat with a `0changes` label.
+
+```{r example, message = FALSE}
+library(mlr3)
 library(mlr3changepoint)
 library(data.table)
 
-# one row per sequence: the first has two labelled changes, the second none
 set.seed(36)
-toy = data.table(
-  seq = list(
-    c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9)),
-    rnorm(100, 0)
-  ),
-  label = list(
-    data.table(start = c(90, 190), end = c(110, 210), label = c("1change", "1change")),
-    data.table(start = 1, end = 100, label = "0changes")
-  )
-)
-
+signal = vector("list", 10L)
+label = vector("list", 10L)
+for (i in seq_len(10L)) {
+  if (i %% 2L == 1L) {
+    signal[[i]] = c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9))
+    label[[i]] = data.table(start = c(90, 190), end = c(110, 210), label = "1change")
+  } else {
+    signal[[i]] = rnorm(100, 0)
+    label[[i]] = data.table(start = 1, end = 100, label = "0changes")
+  }
+}
 task = TaskCpt$new(
-  id = "toy", backend = toy,
-  target = "label", sequence = "seq", label_type = "changepoint"
+  id = "toy", backend = data.table(signal = signal, label = label),
+  target = "label", sequence = "signal", label_type = "changepoint"
 )
-task
-
-# the weak labels: one set of regions per sequence
-task$truth()
-
-# which kind of labels this task carries
-task$label_type
 ```
 
-## Bugs, Questions, Feedback
+Train the interval regression learner, predict a `log(lambda)` for each sequence, and score the label error and AUC.
 
-*mlr3changepoint* is a free and open source software project that encourages participation
-and feedback. If you have any issues, questions, suggestions, or feedback, please do not
-hesitate to open an issue in the
-[issue tracker](https://github.com/sleepysnorlax05/mlr3changepoint/issues). In order to
-reproduce issues please use a [reprex](https://reprex.tidyverse.org/).
+```{r train}
+learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
+learner$train(task)
+prediction = learner$predict(task)
+prediction$score(msrs(c("changepoint.label_error", "changepoint.auc")), task = task)
+```
 
-For general questions about the mlr3 ecosystem, the
-[mlr3book](https://mlr3book.mlr-org.com/) and the
-[mlr-org community channels](https://stackoverflow.com/questions/tagged/mlr3) are good
-starting points.
+`autoplot()` draws each sequence with its labelled regions and dashed lines at the predicted changes.
 
-## Related Work
+```{r autoplot, fig.width = 8, fig.height = 5, fig.alt = "Ten toy sequences with shaded labelled regions and dashed lines at the predicted changes."}
+ggplot2::autoplot(prediction, task = task)
+```
 
-Change point detection has a rich ecosystem in R. *mlr3changepoint* builds on and
-interfaces several of these packages rather than replacing them:
+## Documentation
 
-- [changepoint](https://cran.r-project.org/package=changepoint) — mainstream and
-  specialised methods for detecting single and multiple change points (PELT, binary
-  segmentation, and more).
-- [binsegRcpp](https://cran.r-project.org/package=binsegRcpp) — efficient C++ binary
-  segmentation, log-linear on average and quadratic in the worst case.
-- [fpop](https://cran.r-project.org/package=fpop) — optimal partitioning with functional
-  pruning for fast segmentation of univariate signals into piecewise-constant profiles.
-- [dust](https://github.com/vrunge/dust) — optimal partitioning with the DUST
-  ("DUality Simple Test") pruning rule, a recent alternative to PELT and FPOP.
-- [penaltyLearning](https://cran.r-project.org/package=penaltyLearning) — supervised
-  penalty learning for change point detection, and the source of the labelled-region
-  (weak supervision) setup used here.
-- [rupturesRcpp](https://cran.r-project.org/package=rupturesRcpp) — object-oriented Rcpp
-  interface to popular offline change-point algorithms (an R counterpart to Python's
-  `ruptures`).
-- the **PeakSeg** family ([PeakSegOptimal](https://cran.r-project.org/package=PeakSegOptimal),
-  PeakSegDisk, PeakSegJoint) — optimal peak detection via up-down constrained changepoint
-  models, used for the `"peak"` label type.
+The [package website](https://sleepysnorlax05.github.io/mlr3changepoint/) starts with [Getting started](https://sleepysnorlax05.github.io/mlr3changepoint/articles/getting-started.html). It also has a chapter on each part of the package and case studies on real and simulated data. Report bugs and questions in the [issue tracker](https://github.com/sleepysnorlax05/mlr3changepoint/issues).
+
+## Related work
+
+- [penaltyLearning](https://cran.r-project.org/package=penaltyLearning): supervised penalty learning for changepoint detection, and the source of the labelled-region setup used here.
+- [changepoint](https://cran.r-project.org/package=changepoint): classical changepoint methods. Its SegNeigh solver computes the changepoint model paths.
+- [PeakSegOptimal](https://cran.r-project.org/package=PeakSegOptimal) and [PeakError](https://cran.r-project.org/package=PeakError): optimal peak models and peak label errors, used for `"peak"` labels.
+- [mmit](https://github.com/aldro61/mmit): maximum margin interval trees and forests.
+- [rupturesRcpp](https://cran.r-project.org/package=rupturesRcpp), [binsegRcpp](https://cran.r-project.org/package=binsegRcpp), [fpop](https://cran.r-project.org/package=fpop) and [dust](https://github.com/vrunge/dust): fast unsupervised segmentation.
 
 ## Acknowledgements
 
-*mlr3changepoint* is developed as part of
-[Google Summer of Code 2026](https://summerofcode.withgoogle.com/) under the
-[R Project for Statistical Computing](https://www.r-project.org/). Special thanks to
-mentors Toby Hocking, Marc Becker and Tung Lam Nguyen for their guidance, and to the
-[mlr-org](https://github.com/mlr-org) team for designing and maintaining the mlr3
-ecosystem that this package extends.
+`mlr3changepoint` is developed during [Google Summer of Code 2026](https://summerofcode.withgoogle.com/) for the [R Project for Statistical Computing](https://www.r-project.org/). Thanks to the mentors Toby Hocking, Marc Becker and Tung Lam Nguyen, and to the [mlr-org](https://github.com/mlr-org) team for the mlr3 ecosystem this package extends.
