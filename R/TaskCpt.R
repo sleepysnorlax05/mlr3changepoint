@@ -9,11 +9,16 @@
 #'
 #' @details
 #' The Task table has one row for each labeled sequence, and two special column roles:
-#' - `sequence`: the column that identifies the sequence (e.g., time series)
+#' - `sequence`: a list column where each entry is the numeric signal of one sequence (e.g., a time series)
 #' - `target`: a list column where each entry is a `data.table(start, end, label)`
 #'
 #' The `label_type` can be either "changepoint" or "peak", depending on the type of detection problem.
 #' This is stored as an extra argument and can be accessed via the active binding `label_type`.
+#'
+#' Positions are 1-based indices into the signal, and the two label types read `start` and `end`
+#' differently. A change at `X` lies between positions `X` and `X + 1`, and a changepoint region
+#' holds the changes with `start < X <= end`. A peak region covers positions `start` to `end`, both
+#' included.
 #'
 #' @family Task
 #'

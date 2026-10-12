@@ -13,12 +13,17 @@ The \code{task_type} is set to \code{"changepoint"}.
 \details{
 The Task table has one row for each labeled sequence, and two special column roles:
 \itemize{
-\item \code{sequence}: the column that identifies the sequence (e.g., time series)
+\item \code{sequence}: a list column where each entry is the numeric signal of one sequence (e.g., a time series)
 \item \code{target}: a list column where each entry is a \code{data.table(start, end, label)}
 }
 
 The \code{label_type} can be either "changepoint" or "peak", depending on the type of detection problem.
 This is stored as an extra argument and can be accessed via the active binding \code{label_type}.
+
+Positions are 1-based indices into the signal, and the two label types read \code{start} and \code{end}
+differently. A change at \code{X} lies between positions \code{X} and \code{X + 1}, and a changepoint region
+holds the changes with \code{start < X <= end}. A peak region covers positions \code{start} to \code{end}, both
+included.
 }
 \examples{
 library(data.table)
