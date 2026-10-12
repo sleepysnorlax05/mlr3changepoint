@@ -115,8 +115,17 @@ LearnerCptIntRegrCV = R6::R6Class(
       pv$Kmax = NULL
 
       parts = cpt_extract_data(task)
-      feature_mat = cpt_feature_matrix(parts)
       target_mat = cpt_target_intervals(task, Kmax)
+      # A sequence whose label errors do not change with the penalty gets the
+      # target (-Inf, Inf). It constrains nothing and IntervalRegressionCV()
+      # rejects it, so it is left out of the fit.
+      informative = is.finite(target_mat[, "min.log.lambda"]) | is.finite(target_mat[, "max.log.lambda"])
+      parts = list(
+        ids = parts$ids[informative],
+        sequence = parts$sequence[informative],
+        target = parts$target[informative]
+      )
+      target_mat = target_mat[informative, , drop = FALSE]
 
       # Deterministic, stratified CV folds. IntervalRegressionCV defaults fold.vec
       # to sample(), so on small or imbalanced data an unlucky draw can hand a fold
@@ -132,6 +141,7 @@ LearnerCptIntRegrCV = R6::R6Class(
         limit = if (has_upper) "lower" else "upper"
         stopf("labels give no finite %s penalty limit; need both bounded and open target intervals", limit)
       }
+      feature_mat = cpt_feature_matrix(parts)
       n_folds = pv$n.folds %??% if (nrow(feature_mat) < 10L) 3L else 5L
       pv$n.folds = NULL
       sig = paste(
