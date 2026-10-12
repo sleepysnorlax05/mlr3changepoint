@@ -16,7 +16,6 @@ Weakly supervised changepoint detection for
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![pkgdown](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/pkgdown.yaml/badge.svg)](https://sleepysnorlax05.github.io/mlr3changepoint/)
-
 <!-- badges: end -->
 
 *mlr3changepoint* is the changepoint detection package of the
@@ -93,12 +92,12 @@ Windows, so pak installs a patched copy from
 
 ## Learners
 
-| Key                                                                                                                              | Label                               | Packages                                                                                                 |
-|----------------------------------------------------------------------------------------------------------------------------------|-------------------------------------|----------------------------------------------------------------------------------------------------------|
-| [changepoint.intregrcv](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.intregrcv.html)     | Cross-Validated Interval Regression | [penaltyLearning](https://cran.r-project.org/package=penaltyLearning)                                    |
-| [changepoint.xgboost.aft](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.xgboost.aft.html) | Extreme Gradient Boosting AFT       | [xgboost](https://cran.r-project.org/package=xgboost)                                                    |
-| [changepoint.mmit](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmit.html)               | Max Margin Interval Tree            | [mmit](https://github.com/aldro61/mmit)                                                                  |
-| [changepoint.mmif](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmif.html)               | Max Margin Interval Forest          | [mmit](https://github.com/aldro61/mmit), [future.apply](https://cran.r-project.org/package=future.apply) |
+| Key | Label | Packages |
+|----|----|----|
+| [changepoint.intregrcv](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.intregrcv.html) | Cross-Validated Interval Regression | [penaltyLearning](https://cran.r-project.org/package=penaltyLearning) |
+| [changepoint.xgboost.aft](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.xgboost.aft.html) | Extreme Gradient Boosting AFT | [xgboost](https://cran.r-project.org/package=xgboost) |
+| [changepoint.mmit](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmit.html) | Max Margin Interval Tree | [mmit](https://github.com/aldro61/mmit) |
+| [changepoint.mmif](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmif.html) | Max Margin Interval Forest | [mmit](https://github.com/aldro61/mmit), [future.apply](https://cran.r-project.org/package=future.apply) |
 
 Every learner also needs
 [penaltyLearning](https://cran.r-project.org/package=penaltyLearning)
@@ -111,11 +110,11 @@ labels.
 
 ## Measures
 
-| Key                                                                                                                                    | Label                    | What it scores                                                      |
-|----------------------------------------------------------------------------------------------------------------------------------------|--------------------------|---------------------------------------------------------------------|
-| [changepoint.label_error](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.label_error.html)       | Label Error              | Share of labelled regions with a false positive or false negative   |
-| [changepoint.label_accuracy](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.label_accuracy.html) | Label Accuracy           | One minus the label error                                           |
-| [changepoint.auc](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.auc.html)                       | Area Under the ROC Curve | Area under the ROC curve traced by shifting all predicted penalties |
+| Key | Label | What it scores |
+|----|----|----|
+| [changepoint.label_error](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.label_error.html) | Label Error | Share of labelled regions with a false positive or false negative |
+| [changepoint.label_accuracy](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.label_accuracy.html) | Label Accuracy | One minus the label error |
+| [changepoint.auc](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.auc.html) | Area Under the ROC Curve | Area under the ROC curve traced by shifting all predicted penalties |
 
 ## Example
 
