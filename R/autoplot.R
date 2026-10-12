@@ -137,6 +137,10 @@ autoplot.TaskCpt = function(object, theme = ggplot2::theme_minimal(), ...) {
 #' @param object ([PredictionCpt]).
 #' @param task ([TaskCpt])\cr
 #'   Task the prediction was made on; must contain every predicted row.
+#' @param type (`character(1)`)\cr
+#'   `"segmentation"` (default) draws the decoded marks; `"roc"` draws the ROC curve
+#'   [mlr_measures_changepoint.auc] integrates, from [penaltyLearning::ROChange()], with the AUC as
+#'   title and a point at the predicted penalties (shift 0).
 #' @param Kmax (`integer(1)` | `NULL`)\cr
 #'   Complexity cap for a prediction that does not record one; ignored when the
 #'   prediction carries `Kmax`.
@@ -163,30 +167,50 @@ autoplot.TaskCpt = function(object, theme = ggplot2::theme_minimal(), ...) {
 #' p = PredictionCpt$new(task = task, response = c(2.5, 3.0))
 #' # A hand-made prediction records no Kmax, so pass it; learner predictions carry their own.
 #' ggplot2::autoplot(p, task = task, Kmax = 3L)
+#' ggplot2::autoplot(p, task = task, type = "roc", Kmax = 3L)
 #'
 #' @exportS3Method ggplot2::autoplot
-autoplot.PredictionCpt = function(object, task, Kmax = NULL, theme = ggplot2::theme_minimal(), ...) {
-  x = xend = y = NULL # silence R CMD check notes on the aes() columns
+autoplot.PredictionCpt = function(
+  object,
+  task,
+  type = "segmentation",
+  Kmax = NULL,
+  theme = ggplot2::theme_minimal(),
+  ...
+) {
+  x = xend = y = FPR = TPR = NULL # silence R CMD check notes on the aes() columns
   assert_class(task, "TaskCpt")
+  assert_choice(type, c("segmentation", "roc"))
   if (anyDuplicated(object$row_ids)) {
     stopf("the prediction has duplicated row ids; plot one resampling iteration at a time")
   }
-  label_type = task$label_type
-  parts = cpt_extract_data(task, object$row_ids)
-  p = cpt_plot_base(parts, label_type)
-
+  if (length(object$row_ids) == 0L) {
+    stopf("nothing to plot: no rows selected")
+  }
   response = object$response
   bad = !is.finite(response)
   if (any(bad)) {
     stopf("non-finite predicted penalty selects no model for row ids: %s", str_collapse(object$row_ids[bad]))
   }
-  Kmax = object$data$extra$Kmax %??% rep(Kmax, length(response))
-  if (!test_integerish(Kmax, lower = 1, any.missing = FALSE, len = length(response))) {
-    stopf(paste0(
-      "plotting a prediction needs a positive integer Kmax per sequence: ",
-      "the prediction records none, so pass Kmax"
-    ))
+
+  if (type == "roc") {
+    roc = cpt_roc(object, task, Kmax = Kmax)
+    if (is.null(roc)) {
+      stopf("the ROC curve needs both positive and negative labels")
+    }
+    predicted = roc$thresholds[roc$thresholds$threshold == "predicted", ]
+    g = ggplot2::ggplot(roc$roc, ggplot2::aes(x = FPR, y = TPR)) +
+      ggplot2::geom_path() +
+      ggplot2::geom_point(data = predicted, colour = "deepskyblue", size = 3) +
+      ggplot2::coord_equal(xlim = c(0, 1), ylim = c(0, 1)) +
+      ggplot2::labs(title = sprintf("AUC = %.3f", roc$auc))
+    return(g + theme)
   }
+
+  label_type = task$label_type
+  parts = cpt_extract_data(task, object$row_ids)
+  p = cpt_plot_base(parts, label_type)
+  Kmax = cpt_prediction_kmax(object, Kmax = Kmax)
 
   # Decode each sequence at its own predicted penalty and cap, the model the
   # measure scores. Keep 0-row tables so rbindlist() keeps the columns when
