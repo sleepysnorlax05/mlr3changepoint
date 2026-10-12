@@ -3,7 +3,7 @@
 #' @name mlr_measures_changepoint.label_error
 #'
 #' @description
-#' Percentage of label regions the predicted segmentation gets wrong: the total
+#' Proportion of label regions the predicted segmentation gets wrong: the total
 #' false positives plus false negatives across all sequences, divided by the
 #' total number of labels (Hocking et al.'s percent-incorrect-labels metric).
 #' [mlr_measures_changepoint.label_accuracy] is its complement.
