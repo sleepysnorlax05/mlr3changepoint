@@ -20,7 +20,7 @@ library(ggplot2)
 
 ## The data
 
-Each profile is a tumour sample measured on a microarray. `profiles` has the log ratio of each probe, which is proportional to copy number, with its chromosome and its position in base pairs. `annotations` has the labels an expert drew: a genomic region from `min` to `max`, labelled `breakpoint` (at least one change) or `normal` (no change). Both names are in `penaltyLearning::change.labels`.
+Each profile is a tumour sample measured on a microarray. `profiles` has the log ratio of each probe, the logarithm of its copy number relative to a reference, so it rises with copy number but is not proportional to it, with its chromosome and its position in base pairs. `annotations` has the labels an expert drew: a genomic region from `min` to `max`, labelled `breakpoint` (at least one change) or `normal` (no change). Both names are in `penaltyLearning::change.labels`.
 
 ```{r}
 data(neuroblastoma, package = "neuroblastoma")
@@ -100,7 +100,7 @@ scores
 
 ## An unsupervised baseline
 
-Without labels, a common choice is a BIC-style penalty, $\lambda = \log n$ for a sequence of $n$ probes, so $\log \lambda = \log \log n$. It needs no training, so the baseline is a `PredictionCpt` built by hand for each test fold. A hand-made prediction records no `Kmax`, so `extra` gives it the same cap as the learners.
+Without labels, a common choice is a BIC-style penalty, $\lambda = \log n$ for a sequence of $n$ probes, so $\log \lambda = \log \log n$. The loss here is the sum of squared residuals, so this matches BIC only when the noise variance is 1; for noise variance $\sigma^2$ BIC would use $\sigma^2 \log n$. It needs no training, so the baseline is a `PredictionCpt` built by hand for each test fold. A hand-made prediction records no `Kmax`, so `extra` gives it the same cap as the learners.
 
 ```{r}
 n_probes = lengths(signal)

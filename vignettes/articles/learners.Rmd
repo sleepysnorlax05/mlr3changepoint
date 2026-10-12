@@ -26,7 +26,7 @@ All four learners train the same way up to the regressor.
 2. Model path. For each sequence, a solver fits the best model of each complexity up to `Kmax`. Changepoint tasks use `changepoint::cpt.mean(method = "SegNeigh")`, which minimises the square loss for 0 to `Kmax` changes. Peak tasks use `PeakSegOptimal::PeakSegPDPAchrom()`, which minimises the Poisson loss for 0 to `Kmax` peaks.
 3. Model selection. `penaltyLearning::modelSelection()` finds the range of `log(lambda)` over which each model is selected.
 4. Label errors. `penaltyLearning::labelError()` for changepoint labels, or `PeakError::PeakError()` for peak labels, counts the false positives and false negatives of each model.
-5. Target intervals. `penaltyLearning::targetIntervals()` gives each sequence the interval of `log(lambda)` values with the fewest label errors. One end of the interval may be infinite.
+5. Target intervals. `penaltyLearning::targetIntervals()` gives each sequence the interval of `log(lambda)` values with the fewest label errors. If the fewest errors are reached on several separate intervals, it keeps the widest. One end of the interval may be infinite.
 6. Regression. The regressor maps the features to the target intervals.
 
 At prediction time, the learner computes the same features and returns the regressor's `log(lambda)`. The measures and `autoplot()` rebuild the model path and pick the model that penalty selects.
@@ -44,7 +44,7 @@ The linear model needs training labels that give at least one finite lower limit
 
 ## Hyperparameters
 
-Every learner requires `Kmax`. It caps model complexity: the largest number of changes (changepoint labels) or peaks (peak labels) on each model path, at training and at prediction. A penalty that would select a more complex model selects the `Kmax` model instead. Set it at least as large as the number of changes a labelled sequence needs. A larger `Kmax` makes each path slower to compute.
+Every learner requires `Kmax`. It caps model complexity: the largest number of changes (changepoint labels) or peaks (peak labels) on each model path, at training and at prediction. A penalty that would select a more complex model selects instead the best model with at most `Kmax` changes or peaks at that penalty. This is often, but not always, the `Kmax` model: when the `Kmax` model lowers the loss only a little, a simpler one can win. Set it at least as large as the number of changes a labelled sequence needs. A larger `Kmax` makes each path slower to compute.
 
 | Learner | Other hyperparameters |
 |---------|-----------------------|
