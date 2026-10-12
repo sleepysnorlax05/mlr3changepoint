@@ -11,7 +11,8 @@ Description: Extends the 'mlr3' package with weakly supervised change point
     detection. Provides tasks, learners, and prediction objects for change
     point detection within the mlr3 framework.
 License: LGPL-3
-URL: https://github.com/sleepysnorlax05/mlr3changepoint
+URL: https://sleepysnorlax05.github.io/mlr3changepoint/,
+    https://github.com/sleepysnorlax05/mlr3changepoint
 BugReports: https://github.com/sleepysnorlax05/mlr3changepoint/issues
 Depends:
     mlr3 (>= 1.0.0),
@@ -40,6 +41,8 @@ Remotes:
     mlr-org/paradox,
     mlr-org/mlr3misc,
     sleepysnorlax05/mmit/Rpackage
+Config/Needs/website:
+    neuroblastoma
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, r6 = TRUE)
