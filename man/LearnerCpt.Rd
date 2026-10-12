@@ -11,6 +11,7 @@ Calling \verb{$train()} or \verb{$predict()} on this base class raises an error.
 }
 \seealso{
 Other Learner: 
+\code{\link{mlr_learners_changepoint.featureless}},
 \code{\link{mlr_learners_changepoint.intregrcv}},
 \code{\link{mlr_learners_changepoint.mmif}},
 \code{\link{mlr_learners_changepoint.mmit}},
