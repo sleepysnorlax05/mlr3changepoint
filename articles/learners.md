@@ -58,6 +58,11 @@ rebuild the model path and pick the model that penalty selects.
 | `changepoint.mmit` | Maximum margin interval tree | mmit |
 | `changepoint.mmif` | Forest of maximum margin interval trees grown on bootstrap samples and random feature subsets | mmit |
 
+`changepoint.featureless` is a baseline that skips the features and the
+regressor. It predicts the one constant `log(lambda)` with the fewest
+label errors summed over the training sequences, so a learner above is
+only worth its features if it beats this baseline.
+
 The linear model needs training labels that give at least one finite
 lower limit and at least one finite upper limit. Without them it stops
 with an error. The three tree-based learners train as long as one limit
@@ -81,6 +86,7 @@ compute.
 | `changepoint.xgboost.aft` | `nrounds` (100), `eta`, `max_depth`, `min_child_weight`, `aft_loss_distribution`, `aft_loss_distribution_scale`, `nthread` (1) |
 | `changepoint.mmit` | `max_depth`, `margin` |
 | `changepoint.mmif` | `max_depth`, `margin`, `n_trees`, `n_features` |
+| `changepoint.featureless` | none |
 
 Each learner’s reference page links to the function it wraps, which
 documents these. The parameter set lists them too.

@@ -161,6 +161,9 @@ package extends.
 
 - [`LearnerCpt`](https://sleepysnorlax05.github.io/mlr3changepoint/reference/LearnerCpt.md)
   : Weakly supervised changepoint detection learner
+- [`mlr_learners_changepoint.featureless`](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.featureless.md)
+  [`LearnerCptFeatureless`](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.featureless.md)
+  : Featureless Changepoint Learner
 - [`mlr_learners_changepoint.intregrcv`](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.intregrcv.md)
   [`LearnerCptIntRegrCV`](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.intregrcv.md)
   : Cross-Validated Interval Regression Changepoint Learner

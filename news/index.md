@@ -13,6 +13,9 @@
   their labelled regions, the segmentation selected by each predicted
   penalty, or the ROC curve (`type = "roc"`).
 - `LearnerCpt` is the abstract base class for changepoint learners.
+- `LearnerCptFeatureless` (`changepoint.featureless`) is a baseline that
+  predicts the one constant penalty with the fewest training label
+  errors.
 - `LearnerCptIntRegrCV` (`changepoint.intregrcv`) learns the penalty
   with
   [`penaltyLearning::IntervalRegressionCV()`](https://rdrr.io/pkg/penaltyLearning/man/IntervalRegressionCV.html).

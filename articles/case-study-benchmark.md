@@ -1,8 +1,9 @@
 # Benchmarking the learners
 
 This case study compares the four learners on label error and on
-training time. The data are simulated, so the number of sequences can
-grow as needed.
+training time, with `changepoint.featureless` as the baseline that
+predicts one constant penalty. The data are simulated, so the number of
+sequences can grow as needed.
 
 ``` r
 
@@ -55,6 +56,7 @@ when the mmit package is installed.
 
 has_mmit = requireNamespace("mmit", quietly = TRUE)
 learners = list(
+  lrn("changepoint.featureless", Kmax = 2L),
   lrn("changepoint.intregrcv", Kmax = 2L, n.folds = 2L, min.observations = 2L),
   lrn("changepoint.xgboost.aft", Kmax = 2L)
 )
@@ -78,17 +80,20 @@ bmr = benchmark(design)
 bmr$aggregate(measures)[, .(learner_id, changepoint.label_error, changepoint.auc)]
 #>                 learner_id changepoint.label_error changepoint.auc
 #>                     <char>                   <num>           <num>
-#> 1:   changepoint.intregrcv              0.00000000       1.0000000
-#> 2: changepoint.xgboost.aft              0.00000000       1.0000000
-#> 3:        changepoint.mmit              0.02564103       0.9985755
-#> 4:        changepoint.mmif              0.01612277       1.0000000
+#> 1: changepoint.featureless              0.04980155       0.9962252
+#> 2:   changepoint.intregrcv              0.00000000       1.0000000
+#> 3: changepoint.xgboost.aft              0.00000000       1.0000000
+#> 4:        changepoint.mmit              0.02564103       0.9985755
+#> 5:        changepoint.mmif              0.04222579       0.9978632
 ```
 
 The best penalty grows with the noise variance of a sequence. The
 features include variance estimates, so every learner can follow it.
 With about 53 training sequences per fold, `changepoint.intregrcv` and
 `changepoint.xgboost.aft` get every label right, and the tree learners
-miss a few.
+miss a few. `changepoint.featureless` misses about one label in twenty:
+with no features it cannot follow the noise level, which is what the
+other learners gain from them.
 
 ## Training time
 
@@ -114,20 +119,20 @@ for (n_seq in c(10L, 20L, 40L, 80L, 160L)) {
 timings = rbindlist(timings)
 dcast(timings, N ~ learner, value.var = "seconds")
 #> Key: <N>
-#>        N changepoint.intregrcv changepoint.mmif changepoint.mmit
-#>    <int>                 <num>            <num>            <num>
-#> 1:    10                 5.092            0.337            0.369
-#> 2:    20                 6.335            0.594            0.900
-#> 3:    40                 7.220            0.961            1.173
-#> 4:    80                 9.987            1.534            1.732
-#> 5:   160                15.140            2.619            2.817
-#>    changepoint.xgboost.aft
-#>                      <num>
-#> 1:                   0.157
-#> 2:                   0.297
-#> 3:                   0.567
-#> 4:                   1.147
-#> 5:                   2.360
+#>        N changepoint.featureless changepoint.intregrcv changepoint.mmif
+#>    <int>                   <num>                 <num>            <num>
+#> 1:    10                   0.122                 4.994            0.327
+#> 2:    20                   0.217                 6.209            0.587
+#> 3:    40                   0.425                 7.118            0.957
+#> 4:    80                   0.861                 9.978            1.520
+#> 5:   160                   1.684                14.621            2.557
+#>    changepoint.mmit changepoint.xgboost.aft
+#>               <num>                   <num>
+#> 1:            0.362                   0.155
+#> 2:            0.883                   0.296
+#> 3:            1.153                   0.557
+#> 4:            1.716                   1.131
+#> 5:            2.794                   2.343
 ```
 
 The plot uses log scales on both axes, so a power law `seconds ~ N^b` is
@@ -155,10 +160,11 @@ The slope of a least-squares line through the log-log points estimates
 timings[, .(slope = coef(lm(log(seconds) ~ log(N)))[[2L]]), by = learner]
 #>                    learner     slope
 #>                     <char>     <num>
-#> 1:   changepoint.intregrcv 0.3800829
-#> 2: changepoint.xgboost.aft 0.9769231
-#> 3:        changepoint.mmit 0.6809376
-#> 4:        changepoint.mmif 0.7285155
+#> 1: changepoint.featureless 0.9562196
+#> 2:   changepoint.intregrcv 0.3783938
+#> 3: changepoint.xgboost.aft 0.9769964
+#> 4:        changepoint.mmit 0.6855105
+#> 5:        changepoint.mmif 0.7306818
 ```
 
 A slope near 1 means training time grows linearly with the number of

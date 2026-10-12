@@ -55,6 +55,8 @@
 <li>
 <code>LearnerCpt</code> is the abstract base class for changepoint learners.</li>
 <li>
+<code>LearnerCptFeatureless</code> (<code>changepoint.featureless</code>) is a baseline that predicts the one constant penalty with the fewest training label errors.</li>
+<li>
 <code>LearnerCptIntRegrCV</code> (<code>changepoint.intregrcv</code>) learns the penalty with <code><a href="https://rdrr.io/pkg/penaltyLearning/man/IntervalRegressionCV.html" class="external-link">penaltyLearning::IntervalRegressionCV()</a></code>.</li>
 <li>
 <code>LearnerCptMMIF</code> (<code>changepoint.mmif</code>) learns the penalty with a max margin interval forest from mmit.</li>
