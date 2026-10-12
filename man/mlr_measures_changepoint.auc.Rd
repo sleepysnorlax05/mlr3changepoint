@@ -7,7 +7,7 @@
 \description{
 Area under the ROC curve that \code{\link[penaltyLearning:ROChange]{penaltyLearning::ROChange()}} traces by adding one constant to every
 predicted penalty \code{log(lambda)}. Each shift selects one model per sequence, and the curve plots the
-false positive rate against the true positive rate, totalled over all label regions. The models and
+true positive rate against the false positive rate, totalled over all label regions. The models and
 their label errors come from the same pipeline and per-sequence \code{Kmax} as
 \link{mlr_measures_changepoint.label_error} (the prediction's recorded cap, else the learner's).
 \code{autoplot(prediction, task = task, type = "roc")} draws the curve.

@@ -5,6 +5,7 @@
 * Every prediction records the `Kmax` it was learned under in its `extra` data, so measures and plots decode the same segmentation, also for wrapped (`GraphLearner`, `AutoTuner`) and resampled learners.
 * `autoplot()` methods for `TaskCpt` and `PredictionCpt` draw the sequences with their labelled regions, the segmentation selected by each predicted penalty, or the ROC curve (`type = "roc"`).
 * `LearnerCpt` is the abstract base class for changepoint learners.
+* `LearnerCptFeatureless` (`changepoint.featureless`) is a baseline that predicts the one constant penalty with the fewest training label errors.
 * `LearnerCptIntRegrCV` (`changepoint.intregrcv`) learns the penalty with `penaltyLearning::IntervalRegressionCV()`.
 * `LearnerCptMMIF` (`changepoint.mmif`) learns the penalty with a max margin interval forest from mmit.
 * `LearnerCptMMIT` (`changepoint.mmit`) learns the penalty with a max margin interval tree from mmit.

@@ -19,6 +19,7 @@
 
 register_learners = function() {
   x = utils::getFromNamespace("mlr_learners", "mlr3")
+  x$add("changepoint.featureless", function() LearnerCptFeatureless$new())
   x$add("changepoint.intregrcv", function() LearnerCptIntRegrCV$new())
   x$add("changepoint.mmif", function() LearnerCptMMIF$new())
   x$add("changepoint.mmit", function() LearnerCptMMIT$new())
@@ -27,6 +28,7 @@ register_learners = function() {
 
 unregister_learners = function() {
   x = utils::getFromNamespace("mlr_learners", "mlr3")
+  x$remove("changepoint.featureless")
   x$remove("changepoint.intregrcv")
   x$remove("changepoint.mmif")
   x$remove("changepoint.mmit")
