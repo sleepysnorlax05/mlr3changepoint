@@ -9,6 +9,10 @@ Do not use this class directly, but rather inherit from it when implementing spe
 It inherits from \link[mlr3:Learner]{mlr3::Learner} and sets the \code{task_type} to \code{"changepoint"}.
 Calling \verb{$train()} or \verb{$predict()} on this base class raises an error.
 }
+\seealso{
+Other Learner: 
+\code{\link{mlr_learners_changepoint.intregrcv}}
+}
 \concept{Learner}
 \section{Super class}{
 \code{\link[mlr3:Learner]{mlr3::Learner}} -> \code{LearnerCpt}

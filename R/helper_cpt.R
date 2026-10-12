@@ -21,6 +21,27 @@ cpt_extract_data = function(task) {
   list(ids = ids, sequence = sequence, target = target)
 }
 
+#' Guard that a prediction task's label_type matches the trained model
+#'
+#' The whole model (features, learned penalty, and the solver that reads the
+#' penalty) is specific to the label_type it was trained on, so predicting on a
+#' task with a different label_type would return a silently meaningless penalty.
+#' Fail fast with a clear message instead.
+#'
+#' @param task ([TaskCpt]).
+#' @param model (`list`)\cr A trained learner's `$model`, carrying `label_type`.
+#' @return `invisible(NULL)`; called for the side effect of erroring on mismatch.
+#' @noRd
+cpt_assert_model_label_type = function(task, model) {
+  if (task$label_type != model$label_type) {
+    stopf(
+      "learner was trained on label_type '%s' but the task has label_type '%s'",
+      model$label_type,
+      task$label_type
+    )
+  }
+}
+
 
 #' Build the per-sequence feature matrix for a TaskCpt
 #'
@@ -125,12 +146,13 @@ cpt_path_changepoint = function(signal, Kmax) {
   models = list(data.table(complexity = 1L, loss = seg_loss(integer())))
   predicted = list(data.table(complexity = integer(), change = numeric()))
 
-  # SegNeigh errors when Q exceeds n - 2; clamp so a short sequence just yields a
-  # shorter path.
-  Q = min(as.integer(Kmax), n - 2L)
-  if (Q >= 1L) {
+  # SegNeigh's Q counts segments, so Kmax changes need Kmax + 1. It only accepts
+  # 3 <= Q <= n - 2 (Q = 2 errors), so clamp to n - 2, fit at least 3 segments,
+  # and keep only the models within Kmax changes.
+  Q = min(as.integer(Kmax) + 1L, n - 2L)
+  if (Q >= 2L && n >= 5L) {
     fit = withCallingHandlers(
-      changepoint::cpt.mean(signal, method = "SegNeigh", Q = Q, penalty = "None"),
+      changepoint::cpt.mean(signal, method = "SegNeigh", Q = max(Q, 3L), penalty = "None"),
       warning = function(w) {
         if (grepl("SegNeigh|number of segments identified", w$message)) {
           invokeRestart("muffleWarning")
@@ -140,7 +162,7 @@ cpt_path_changepoint = function(signal, Kmax) {
     # cpts.full(): row k holds the k changepoint positions of the (k + 1)-segment
     # model, NA-padded to Q columns.
     cps = changepoint::cpts.full(fit)
-    for (k in seq_len(nrow(cps))) {
+    for (k in seq_len(Q - 1L)) {
       ends = cps[k, ]
       ends = ends[!is.na(ends)]
       models[[k + 1L]] = data.table(complexity = k + 1L, loss = seg_loss(ends))
