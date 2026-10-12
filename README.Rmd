@@ -45,7 +45,8 @@ The package is developed during Google Summer of Code 2026, and its API may stil
 ## Feature overview
 
 * A `"changepoint"` task type, `TaskCpt`, holding one labelled sequence per row with `"changepoint"` or `"peak"` labels.
-* Four learners that predict a `log(lambda)` penalty per sequence: linear interval regression, gradient boosted trees, and max margin interval trees and forests.
+* Four learners that predict a `log(lambda)` penalty per sequence from its features: linear interval regression, gradient boosted trees, and max margin interval trees and forests.
+* A featureless baseline that learns one constant penalty, for checking that the features help in `benchmark()`.
 * Three measures that decode the segmentation each penalty selects and score it against the labels.
 * `autoplot()` methods that draw the labelled sequences, the predicted changes and the ROC curve.
 
@@ -80,6 +81,7 @@ Its upstream sources no longer compile on macOS and Windows, so pak installs a p
 | [changepoint.xgboost.aft](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.xgboost.aft.html) | Extreme Gradient Boosting AFT | [xgboost](https://cran.r-project.org/package=xgboost) |
 | [changepoint.mmit](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmit.html) | Max Margin Interval Tree | [mmit](https://github.com/aldro61/mmit) |
 | [changepoint.mmif](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmif.html) | Max Margin Interval Forest | [mmit](https://github.com/aldro61/mmit), [future.apply](https://cran.r-project.org/package=future.apply) |
+| [changepoint.featureless](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.featureless.html) | Featureless Constant Penalty | [penaltyLearning](https://cran.r-project.org/package=penaltyLearning) |
 
 Every learner also needs [penaltyLearning](https://cran.r-project.org/package=penaltyLearning) and computes its model paths with [changepoint](https://cran.r-project.org/package=changepoint) for `"changepoint"` labels or [PeakSegOptimal](https://cran.r-project.org/package=PeakSegOptimal) and [PeakError](https://cran.r-project.org/package=PeakError) for `"peak"` labels.
 
