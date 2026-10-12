@@ -268,3 +268,21 @@ test_that("peak label starts are converted to 0-based for PeakError", {
   expect_equal(res$fn, 0L) # fn = 1 before the fix
   expect_equal(res$errors, 0L)
 })
+
+test_that("peak model errors carry the ROChange() totals", {
+  skip_if_not_installed("penaltyLearning")
+  skip_if_not_installed("PeakSegOptimal")
+  skip_if_not_installed("PeakError")
+
+  me = cpt_label_errors(toy_peak(), 2L)
+  one = me[me$problem == 1L, ]
+  two = me[me$problem == 2L, ]
+  # Row 1: noPeaks (can be a false positive) + peaks (can be a false negative).
+  expect_equal(unique(one$labels), 2)
+  expect_equal(unique(one$possible.fp), 1)
+  expect_equal(unique(one$possible.fn), 1)
+  # Row 2: a single noPeaks region.
+  expect_equal(unique(two$labels), 1)
+  expect_equal(unique(two$possible.fn), 0)
+  expect_true(all(me$errors <= me$labels))
+})
