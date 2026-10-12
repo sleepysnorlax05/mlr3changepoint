@@ -1,0 +1,88 @@
+url: https://sleepysnorlax05.github.io/mlr3changepoint/
+template:
+  bootstrap: 5
+  math-rendering: katex
+
+authors:
+  sidebar:
+    roles: [cre, aut]
+  footer:
+    roles: [cre, aut]
+
+navbar:
+  structure:
+    left: [start, docs, cases]
+    right: [github]
+  components:
+    start:
+      text: Getting started
+      href: articles/getting-started.html
+    docs:
+      text: Documentation
+      menu:
+      - text: Overview
+        href: articles/documentation.html
+      - text: -------
+      - text: Tasks and labels
+        href: articles/tasks.html
+      - text: Learners
+        href: articles/learners.html
+      - text: Evaluation and plots
+        href: articles/evaluation.html
+    cases:
+      text: Case studies
+      menu:
+      - text: Overview
+        href: articles/case-studies.html
+      - text: -------
+      - text: Neuroblastoma copy-number profiles
+        href: articles/case-study-neuroblastoma.html
+      - text: Peak detection in count data
+        href: articles/case-study-peaks.html
+      - text: Benchmarking the learners
+        href: articles/case-study-benchmark.html
+
+reference:
+- title: Tasks
+  contents:
+  - TaskCpt
+- title: Learners
+  contents:
+  - LearnerCpt
+  - mlr_learners_changepoint.intregrcv
+  - mlr_learners_changepoint.xgboost.aft
+  - mlr_learners_changepoint.mmit
+  - mlr_learners_changepoint.mmif
+- title: Predictions
+  contents:
+  - PredictionCpt
+- title: Measures
+  contents:
+  - MeasureCpt
+  - mlr_measures_changepoint.label_error
+  - mlr_measures_changepoint.label_accuracy
+  - mlr_measures_changepoint.auc
+- title: Visualisation
+  contents:
+  - autoplot.TaskCpt
+  - autoplot.PredictionCpt
+- title: Package
+  contents:
+  - mlr3changepoint-package
+
+articles:
+- title: Getting started
+  contents:
+  - articles/getting-started
+- title: Documentation
+  contents:
+  - articles/documentation
+  - articles/tasks
+  - articles/learners
+  - articles/evaluation
+- title: Case studies
+  contents:
+  - articles/case-studies
+  - articles/case-study-neuroblastoma
+  - articles/case-study-peaks
+  - articles/case-study-benchmark
