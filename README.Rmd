@@ -19,7 +19,7 @@ options(width = 100, datatable.print.class = FALSE)
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/R-CMD-check.yaml)
-[![codecov](https://codecov.io/github/sleepysnorlax05/mlr3changepoint/graph/badge.svg?token=AGF9QGIRKY)](https://codecov.io/github/sleepysnorlax05/mlr3changepoint)
+[![codecov](https://codecov.io/github/sleepysnorlax05/mlr3changepoint/graph/badge.svg?token=AGF9QGIRKY)](https://app.codecov.io/github/sleepysnorlax05/mlr3changepoint)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![pkgdown](https://github.com/sleepysnorlax05/mlr3changepoint/actions/workflows/pkgdown.yaml/badge.svg)](https://sleepysnorlax05.github.io/mlr3changepoint/)
 <!-- badges: end -->

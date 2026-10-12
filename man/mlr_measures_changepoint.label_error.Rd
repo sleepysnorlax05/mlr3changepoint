@@ -45,6 +45,7 @@ This measure can be retrieved via \link[mlr3:mlr_measures]{mlr3::mlr_measures} w
 }
 
 \examples{
+\dontshow{if (mlr3misc::require_namespaces(c("penaltyLearning", "changepoint"), quietly = TRUE)) withAutoprint(\{ # examplesIf}
 library(data.table)
 
 # Alternate change-bearing and flat sequences so the learner's internal
@@ -77,7 +78,7 @@ learner$train(task)
 prediction = learner$predict(task)
 prediction$score(msr("changepoint.label_error"), task = task)
 }
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other Measure: 

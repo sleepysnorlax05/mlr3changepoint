@@ -58,6 +58,7 @@ the fit is reproducible under \code{\link[=set.seed]{set.seed()}}.
 }
 
 \examples{
+\dontshow{if (mlr3misc::require_namespaces(c("mmit", "future.apply", "penaltyLearning", "changepoint"), quietly = TRUE)) withAutoprint(\{ # examplesIf}
 library(data.table)
 
 set.seed(36)
@@ -85,7 +86,7 @@ set.seed(36)
 learner$train(task)
 learner$predict(task)
 }
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other Learner: 

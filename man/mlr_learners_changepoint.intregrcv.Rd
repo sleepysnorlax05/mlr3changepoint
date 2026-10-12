@@ -45,6 +45,7 @@ meaning and defaults.
 }
 
 \examples{
+\dontshow{if (mlr3misc::require_namespaces(c("penaltyLearning", "changepoint"), quietly = TRUE)) withAutoprint(\{ # examplesIf}
 library(data.table)
 
 # Alternate change-bearing and flat sequences so the internal
@@ -76,7 +77,7 @@ set.seed(36)
 learner$train(task)
 learner$predict(task)
 }
-
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 Other Learner: 
