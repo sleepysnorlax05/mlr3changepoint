@@ -1,0 +1,130 @@
+---
+title: "Getting started"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>", fig.width = 8, fig.height = 4, warning = FALSE, message = FALSE
+)
+lgr::get_logger("mlr3")$set_threshold("warn")
+```
+
+This page installs `mlr3changepoint` and runs a first workflow, from labelled sequences to a trained learner, its predictions and their scores.
+
+## What the package does
+
+A changepoint model splits a sequence into segments. How many segments it keeps depends on a penalty: a small penalty keeps many changes and a large one keeps few. `mlr3changepoint` learns that penalty from labelled examples, one value per sequence, as a function of features of the sequence.
+
+The labels are weak. Each one marks a region of a sequence and says how many changes it should contain, for example `1change` on positions 90 to 110 or `0changes` on a flat stretch. A label does not give the position of a change or a value for each point. Peaks in count data work the same way, with labels such as `peaks` and `noPeaks`.
+
+The package adds a `"changepoint"` task type to mlr3, so its tasks, learners and measures work with `resample()`, `benchmark()` and the tuning packages.
+
+## Installation
+
+The package is on GitHub. Install it with pak or remotes. `dependencies = TRUE` also installs the solvers and regressors the learners use, which are suggested packages.
+
+```{r, eval = FALSE}
+# install.packages("pak")
+pak::pak("sleepysnorlax05/mlr3changepoint", dependencies = TRUE)
+
+# or with remotes
+# install.packages("remotes")
+remotes::install_github("sleepysnorlax05/mlr3changepoint", dependencies = TRUE)
+```
+
+The MMIT and MMIF learners need the mmit package, which is not on CRAN. The upstream sources no longer compile on macOS and Windows, so the package points to a patched copy, which both commands above install. To install it on its own:
+
+```{r, eval = FALSE}
+pak::pak("sleepysnorlax05/mmit/Rpackage")
+```
+
+## A first workflow
+
+Load mlr3, the package and data.table. ggplot2 provides `autoplot()`.
+
+```{r setup, message = FALSE}
+library(mlr3)
+library(mlr3changepoint)
+library(data.table)
+library(ggplot2)
+```
+
+### A task
+
+The toy data has ten sequences. The odd ones change mean twice, at positions 100 and 200, and carry a `1change` label around each change. The even ones are flat noise with one `0changes` label.
+
+```{r}
+set.seed(36)
+signal = vector("list", 10L)
+label = vector("list", 10L)
+for (i in seq_len(10L)) {
+  if (i %% 2L == 1L) {
+    signal[[i]] = c(rnorm(100, 18), rnorm(100, 36), rnorm(100, 9))
+    label[[i]] = data.table(start = c(90, 190), end = c(110, 210), label = "1change")
+  } else {
+    signal[[i]] = rnorm(100, 0)
+    label[[i]] = data.table(start = 1, end = 100, label = "0changes")
+  }
+}
+```
+
+A `TaskCpt` has one row per sequence. The `sequence` column holds the signal, and the target column holds a table of labelled regions for each sequence.
+
+```{r}
+task = TaskCpt$new(
+  id = "toy", backend = data.table(signal = signal, label = label),
+  target = "label", sequence = "signal", label_type = "changepoint"
+)
+task
+```
+
+`autoplot()` draws each sequence in its own panel, with the labelled regions shaded.
+
+```{r, fig.height = 5, fig.alt = "Ten panels, one per sequence. Odd sequences step up near position 100 and down near 200, with a shaded 1change region around each step. Even sequences are flat noise shaded as 0changes."}
+autoplot(task)
+```
+
+### Training and prediction
+
+`changepoint.intregrcv` fits a linear model of the log penalty with `penaltyLearning::IntervalRegressionCV()`. `Kmax = 3` lets each sequence have up to three changes. With only ten sequences, the internal cross-validation uses two folds and accepts small training sets.
+
+```{r}
+learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
+learner$train(task)
+prediction = learner$predict(task)
+prediction
+```
+
+The prediction holds one value per sequence: the predicted `log(lambda)`. It also records the `Kmax` the learner was trained with, which the measures and plots need to rebuild the segmentation.
+
+```{r}
+as.data.table(prediction)
+```
+
+### Scoring
+
+The label error is the share of labelled regions the segmentation gets wrong. The AUC is the area under the ROC curve. Both measures rebuild the segmentation from the sequences, so they need the task.
+
+```{r}
+prediction$score(msrs(c("changepoint.label_error", "changepoint.auc")), task = task)
+```
+
+These scores are on the training sequences. The [Evaluation and plots](evaluation.html) chapter scores held-out sequences with `resample()`.
+
+### Plots
+
+Given the task, `autoplot()` of a prediction adds the changes selected by each predicted penalty as dashed lines.
+
+```{r, fig.height = 5, fig.alt = "The ten sequences with their labelled regions and dashed vertical lines at the predicted changes."}
+autoplot(prediction, task = task)
+```
+
+`type = "roc"` draws the ROC curve instead. The dot marks the predicted penalties.
+
+```{r, fig.width = 4, fig.height = 4, fig.alt = "ROC curve of the true positive rate against the false positive rate, with a dot at the predicted penalties."}
+autoplot(prediction, task = task, type = "roc")
+```
+
+## Next steps
+
+The [Documentation](documentation.html) covers tasks and labels, the learners, and evaluation. [Case studies](case-studies.html) has longer examples on copy-number profiles, peaks in count data and a benchmark of the learners.
