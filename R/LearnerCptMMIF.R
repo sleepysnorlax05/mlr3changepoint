@@ -21,8 +21,9 @@
 #' `"changepoint"` uses [changepoint::cpt.mean()], `"peak"` uses
 #' [PeakSegOptimal::PeakSegPDPAchrom()].
 #'
-#' The 'mmit' package is not on CRAN; install it from GitHub with
-#' `pak::pak("aldro61/mmit/Rpackage")`.
+#' The 'mmit' package is not on CRAN. The upstream sources no longer compile with
+#' current C++ toolchains on macOS and Windows, so install the patched copy with
+#' `pak::pak("sleepysnorlax05/mmit/Rpackage")`.
 #'
 #' @section Dictionary:
 #' This learner can be retrieved via [mlr3::mlr_learners] with the key

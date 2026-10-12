@@ -23,8 +23,9 @@ The label solvers are chosen by the task's \code{label_type}:
 \code{"changepoint"} uses \code{\link[changepoint:cpt.mean]{changepoint::cpt.mean()}}, \code{"peak"} uses
 \code{\link[PeakSegOptimal:PeakSegPDPAchrom]{PeakSegOptimal::PeakSegPDPAchrom()}}.
 
-The 'mmit' package is not on CRAN; install it from GitHub with
-\code{pak::pak("aldro61/mmit/Rpackage")}.
+The 'mmit' package is not on CRAN. The upstream sources no longer compile with
+current C++ toolchains on macOS and Windows, so install the patched copy with
+\code{pak::pak("sleepysnorlax05/mmit/Rpackage")}.
 }
 \section{Dictionary}{
 
