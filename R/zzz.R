@@ -35,11 +35,15 @@ unregister_learners = function() {
 
 register_measures = function() {
   x = utils::getFromNamespace("mlr_measures", "mlr3")
+  x$add("changepoint.auc", function() MeasureCptAUC$new())
+  x$add("changepoint.label_accuracy", function() MeasureCptLabelAccuracy$new())
   x$add("changepoint.label_error", function() MeasureCptLabelError$new())
 }
 
 unregister_measures = function() {
   x = utils::getFromNamespace("mlr_measures", "mlr3")
+  x$remove("changepoint.auc")
+  x$remove("changepoint.label_accuracy")
   x$remove("changepoint.label_error")
 }
 
