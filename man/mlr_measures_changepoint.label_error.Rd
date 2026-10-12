@@ -8,6 +8,7 @@
 Percentage of label regions the predicted segmentation gets wrong: the total
 false positives plus false negatives across all sequences, divided by the
 total number of labels (Hocking et al.'s percent-incorrect-labels metric).
+\link{mlr_measures_changepoint.label_accuracy} is its complement.
 
 A \link{PredictionCpt} stores only the predicted penalty \code{log(lambda)} per
 sequence, not a segmentation. This measure re-derives the model path each
@@ -79,7 +80,9 @@ prediction$score(msr("changepoint.label_error"), task = task)
 }
 \seealso{
 Other Measure: 
-\code{\link{MeasureCpt}}
+\code{\link{MeasureCpt}},
+\code{\link{mlr_measures_changepoint.auc}},
+\code{\link{mlr_measures_changepoint.label_accuracy}}
 }
 \concept{Measure}
 \section{Super classes}{
