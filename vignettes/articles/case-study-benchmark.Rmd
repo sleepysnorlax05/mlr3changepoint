@@ -9,7 +9,7 @@ knitr::opts_chunk$set(
 lgr::get_logger("mlr3")$set_threshold("warn")
 ```
 
-This case study compares the four learners on label error and on training time. The data are simulated, so the number of sequences can grow as needed.
+This case study compares the four learners on label error and on training time, with `changepoint.featureless` as the baseline that predicts one constant penalty. The data are simulated, so the number of sequences can grow as needed.
 
 ```{r setup, message = FALSE}
 library(mlr3)
@@ -53,6 +53,7 @@ All learners use `Kmax = 2`. The MMIT and MMIF learners are included when the mm
 ```{r}
 has_mmit = requireNamespace("mmit", quietly = TRUE)
 learners = list(
+  lrn("changepoint.featureless", Kmax = 2L),
   lrn("changepoint.intregrcv", Kmax = 2L, n.folds = 2L, min.observations = 2L),
   lrn("changepoint.xgboost.aft", Kmax = 2L)
 )
@@ -74,7 +75,7 @@ bmr = benchmark(design)
 bmr$aggregate(measures)[, .(learner_id, changepoint.label_error, changepoint.auc)]
 ```
 
-The best penalty grows with the noise variance of a sequence. The features include variance estimates, so every learner can follow it. With about 53 training sequences per fold, `changepoint.intregrcv` and `changepoint.xgboost.aft` get every label right, and the tree learners miss a few.
+The best penalty grows with the noise variance of a sequence. The features include variance estimates, so every learner can follow it. With about 53 training sequences per fold, `changepoint.intregrcv` and `changepoint.xgboost.aft` get every label right, and the tree learners miss a few. `changepoint.featureless` misses about one label in twenty: with no features it cannot follow the noise level, which is what the other learners gain from them.
 
 ## Training time
 

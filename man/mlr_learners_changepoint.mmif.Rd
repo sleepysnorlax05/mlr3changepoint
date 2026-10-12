@@ -91,6 +91,7 @@ learner$predict(task)
 \seealso{
 Other Learner: 
 \code{\link{LearnerCpt}},
+\code{\link{mlr_learners_changepoint.featureless}},
 \code{\link{mlr_learners_changepoint.intregrcv}},
 \code{\link{mlr_learners_changepoint.mmit}},
 \code{\link{mlr_learners_changepoint.xgboost.aft}}

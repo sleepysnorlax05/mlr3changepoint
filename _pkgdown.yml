@@ -49,6 +49,7 @@ reference:
 - title: Learners
   contents:
   - LearnerCpt
+  - mlr_learners_changepoint.featureless
   - mlr_learners_changepoint.intregrcv
   - mlr_learners_changepoint.xgboost.aft
   - mlr_learners_changepoint.mmit
