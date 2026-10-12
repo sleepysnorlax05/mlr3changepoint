@@ -45,7 +45,7 @@
 #'
 #' @family Learner
 #'
-#' @examples
+#' @examplesIf mlr3misc::require_namespaces(c("xgboost", "penaltyLearning", "changepoint"), quietly = TRUE)
 #' library(data.table)
 #'
 #' set.seed(36)
