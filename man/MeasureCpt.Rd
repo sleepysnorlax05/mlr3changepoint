@@ -17,6 +17,8 @@ learners of this package record it per sequence.
 }
 \seealso{
 Other Measure: 
+\code{\link{mlr_measures_changepoint.auc}},
+\code{\link{mlr_measures_changepoint.label_accuracy}},
 \code{\link{mlr_measures_changepoint.label_error}}
 }
 \concept{Measure}

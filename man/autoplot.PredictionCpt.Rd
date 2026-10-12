@@ -4,13 +4,25 @@
 \alias{autoplot.PredictionCpt}
 \title{Plot a Changepoint Prediction}
 \usage{
-\method{autoplot}{PredictionCpt}(object, task, Kmax = NULL, theme = ggplot2::theme_minimal(), ...)
+\method{autoplot}{PredictionCpt}(
+  object,
+  task,
+  type = "segmentation",
+  Kmax = NULL,
+  theme = ggplot2::theme_minimal(),
+  ...
+)
 }
 \arguments{
 \item{object}{(\link{PredictionCpt}).}
 
 \item{task}{(\link{TaskCpt})\cr
 Task the prediction was made on; must contain every predicted row.}
+
+\item{type}{(\code{character(1)})\cr
+\code{"segmentation"} (default) draws the decoded marks; \code{"roc"} draws the ROC curve
+\link{mlr_measures_changepoint.auc} integrates, from \code{\link[penaltyLearning:ROChange]{penaltyLearning::ROChange()}}, with the AUC as
+title and a point at the predicted penalties (shift 0).}
 
 \item{Kmax}{(\code{integer(1)} | \code{NULL})\cr
 Complexity cap for a prediction that does not record one; ignored when the
@@ -65,5 +77,6 @@ task = TaskCpt$new(
 p = PredictionCpt$new(task = task, response = c(2.5, 3.0))
 # A hand-made prediction records no Kmax, so pass it; learner predictions carry their own.
 ggplot2::autoplot(p, task = task, Kmax = 3L)
+ggplot2::autoplot(p, task = task, type = "roc", Kmax = 3L)
 \dontshow{\}) # examplesIf}
 }
