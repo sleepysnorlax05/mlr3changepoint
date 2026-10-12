@@ -20,7 +20,7 @@ library(ggplot2)
 
 ## The data
 
-Each profile is a tumour sample measured on a microarray. `profiles` has the log ratio of each probe, which is proportional to copy number, with its chromosome and its position in base pairs. `annotations` has the labels an expert drew: a genomic region from `min` to `max`, labelled `breakpoint` (at least one change) or `normal` (no change). Both names are in `penaltyLearning::change.labels`.
+Each profile is a tumour sample measured on a microarray. `profiles` has the log ratio of each probe, the logarithm of its copy number relative to a reference, so it rises with copy number but is not proportional to it, with its chromosome and its position in base pairs. `annotations` has the labels an expert drew: a genomic region from `min` to `max`, labelled `breakpoint` (at least one change) or `normal` (no change). Both names are in `penaltyLearning::change.labels`.
 
 ```{r}
 data(neuroblastoma, package = "neuroblastoma")
