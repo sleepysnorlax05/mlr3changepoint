@@ -77,7 +77,8 @@ learner$predict(task)
 }
 \seealso{
 Other Learner: 
-\code{\link{LearnerCpt}}
+\code{\link{LearnerCpt}},
+\code{\link{mlr_learners_changepoint.xgboost.aft}}
 }
 \concept{Learner}
 \section{Super classes}{
