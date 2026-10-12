@@ -98,6 +98,24 @@ cpt_feature_matrix = function(parts, cols = NULL) {
   feats[, cols, drop = FALSE]
 }
 
+#' Convert a feature matrix into the data.frame mmit expects
+#'
+#' `mmit::mmit()` and `mmit::mmif()` build a model frame from the features, so
+#' they need a `data.frame` (a matrix errors inside `model.frame()`) whose column
+#' names are syntactic (`"quartile.25%"` breaks forest prediction). Train and
+#' predict must rename identically, hence one shared definition; the model keeps
+#' storing the original `cpt_feature_matrix()` names for the column replay.
+#'
+#' @param feature_mat (`matrix`)\cr Output of `cpt_feature_matrix()`.
+#' @return A `data.frame` with the same rows and columns, names made syntactic
+#'   and unique via [make.names()].
+#' @noRd
+cpt_mmit_frame = function(feature_mat) {
+  df = as.data.frame(feature_mat)
+  names(df) = make.names(names(df), unique = TRUE)
+  df
+}
+
 #' Segment one sequence into the whole model path
 #'
 #' Fits the label-type solver for a single sequence and returns the path in one

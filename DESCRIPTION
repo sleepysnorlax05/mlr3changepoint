@@ -24,6 +24,8 @@ Imports:
     R6 (>= 2.4.1)
 Suggests:
     changepoint,
+    future.apply,
+    mmit,
     PeakError,
     PeakSegOptimal,
     penaltyLearning,
@@ -32,7 +34,8 @@ Suggests:
 Remotes:
     mlr-org/mlr3,
     mlr-org/paradox,
-    mlr-org/mlr3misc
+    mlr-org/mlr3misc,
+    sleepysnorlax05/mmit/Rpackage
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, r6 = TRUE)
