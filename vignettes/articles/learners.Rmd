@@ -44,7 +44,7 @@ The linear model needs training labels that give at least one finite lower limit
 
 ## Hyperparameters
 
-Every learner requires `Kmax`. It caps model complexity: the largest number of changes (changepoint labels) or peaks (peak labels) on each model path, at training and at prediction. A penalty that would select a more complex model selects the `Kmax` model instead. Set it at least as large as the number of changes a labelled sequence needs. A larger `Kmax` makes each path slower to compute.
+Every learner requires `Kmax`. It caps model complexity: the largest number of changes (changepoint labels) or peaks (peak labels) on each model path, at training and at prediction. A penalty that would select a more complex model selects instead the best model with at most `Kmax` changes or peaks at that penalty. This is often, but not always, the `Kmax` model: when the `Kmax` model lowers the loss only a little, a simpler one can win. Set it at least as large as the number of changes a labelled sequence needs. A larger `Kmax` makes each path slower to compute.
 
 | Learner | Other hyperparameters |
 |---------|-----------------------|

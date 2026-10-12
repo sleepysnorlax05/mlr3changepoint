@@ -573,7 +573,8 @@ cpt_labelled_prediction = function(prediction) {
 #' @param log_lambda (`numeric(1)`)\cr The penalty predicted by the regressor,
 #'   on the log(lambda) scale.
 #' @param Kmax (`integer(1)`)\cr See `cpt_segment_path()`; predict inherits the
-#'   training complexity cap, so a penalty implying more changes saturates.
+#'   training complexity cap, so a penalty implying more changes selects the
+#'   best model within the cap (not necessarily the `Kmax` model).
 #' @param label_type (`character(1)`)\cr `"changepoint"` or `"peak"`.
 #' @return `list(complexity, predicted)`: the selected model's complexity and
 #'   its geometry rows from the path (zero rows = nothing detected).
