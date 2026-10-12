@@ -121,18 +121,18 @@ dcast(timings, N ~ learner, value.var = "seconds")
 #> Key: <N>
 #>        N changepoint.featureless changepoint.intregrcv changepoint.mmif
 #>    <int>                   <num>                 <num>            <num>
-#> 1:    10                   0.122                 4.994            0.327
-#> 2:    20                   0.217                 6.209            0.587
-#> 3:    40                   0.425                 7.118            0.957
-#> 4:    80                   0.861                 9.978            1.520
-#> 5:   160                   1.684                14.621            2.557
+#> 1:    10                   0.129                 5.377            0.345
+#> 2:    20                   0.228                 6.553            0.618
+#> 3:    40                   0.455                 7.442            1.046
+#> 4:    80                   0.905                10.235            1.588
+#> 5:   160                   1.801                15.113            2.638
 #>    changepoint.mmit changepoint.xgboost.aft
 #>               <num>                   <num>
-#> 1:            0.362                   0.155
-#> 2:            0.883                   0.296
-#> 3:            1.153                   0.557
-#> 4:            1.716                   1.131
-#> 5:            2.794                   2.343
+#> 1:            0.374                   0.160
+#> 2:            0.933                   0.319
+#> 3:            1.220                   0.586
+#> 4:            1.762                   1.170
+#> 5:            2.917                   2.475
 ```
 
 The plot uses log scales on both axes, so a power law `seconds ~ N^b` is
@@ -160,11 +160,11 @@ The slope of a least-squares line through the log-log points estimates
 timings[, .(slope = coef(lm(log(seconds) ~ log(N)))[[2L]]), by = learner]
 #>                    learner     slope
 #>                     <char>     <num>
-#> 1: changepoint.featureless 0.9562196
-#> 2:   changepoint.intregrcv 0.3783938
-#> 3: changepoint.xgboost.aft 0.9769964
-#> 4:        changepoint.mmit 0.6855105
-#> 5:        changepoint.mmif 0.7306818
+#> 1: changepoint.featureless 0.9595594
+#> 2:   changepoint.intregrcv 0.3625117
+#> 3: changepoint.xgboost.aft 0.9777450
+#> 4:        changepoint.mmit 0.6844015
+#> 5:        changepoint.mmif 0.7231085
 ```
 
 A slope near 1 means training time grows linearly with the number of

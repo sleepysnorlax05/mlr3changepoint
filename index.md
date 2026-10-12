@@ -1,14 +1,21 @@
 # mlr3changepoint
 
-`mlr3changepoint` adds weakly supervised changepoint detection to
-[mlr3](https://mlr3.mlr-org.com). A changepoint or peak model needs a
-penalty that sets how many changes it keeps. The package learns that
+Package website:
+[sleepysnorlax05.github.io/mlr3changepoint](https://sleepysnorlax05.github.io/mlr3changepoint/)
+
+Weakly supervised changepoint detection for
+**[mlr3](https://mlr3.mlr-org.com)**.
+
+*mlr3changepoint* is the changepoint detection package of the
+[mlr3](https://mlr-org.com) ecosystem. A changepoint or peak model needs
+a penalty that sets how many changes it keeps. The package learns that
 penalty for each sequence from labelled examples, as a function of
 features of the sequence. Its tasks, learners, predictions and measures
 work with
 [`resample()`](https://mlr3.mlr-org.com/reference/resample.html),
-[`benchmark()`](https://mlr3.mlr-org.com/reference/benchmark.html) and
-tuning.
+[`benchmark()`](https://mlr3.mlr-org.com/reference/benchmark.html),
+[mlr3tuning](https://mlr3tuning.mlr-org.com) and
+[mlr3pipelines](https://mlr3pipelines.mlr-org.com).
 
 The supervision is weak. Each label covers a region of a sequence and
 says how many changes it holds, for example `1change` on positions 90 to
@@ -21,7 +28,49 @@ and peak labels follow
 The package is developed during Google Summer of Code 2026, and its API
 may still change.
 
+## Feature overview
+
+- A `"changepoint"` task type, `TaskCpt`, holding one labelled sequence
+  per row with `"changepoint"` or `"peak"` labels.
+- Four learners that predict a `log(lambda)` penalty per sequence from
+  its features: linear interval regression, gradient boosted trees, and
+  max margin interval trees and forests.
+- A featureless baseline that learns one constant penalty, for checking
+  that the features help in
+  [`benchmark()`](https://mlr3.mlr-org.com/reference/benchmark.html).
+- Three measures that decode the segmentation each penalty selects and
+  score it against the labels.
+- `autoplot()` methods that draw the labelled sequences, the predicted
+  changes and the ROC curve.
+
+## Resources
+
+The [package
+website](https://sleepysnorlax05.github.io/mlr3changepoint/) has a
+chapter on each part of the package and case studies on real and
+simulated data.
+
+- Start with [Getting
+  started](https://sleepysnorlax05.github.io/mlr3changepoint/articles/getting-started.html)
+  for a first workflow from task to score.
+- Learn how [tasks and
+  labels](https://sleepysnorlax05.github.io/mlr3changepoint/articles/tasks.html)
+  describe sequences and labelled regions.
+- Compare the
+  [learners](https://sleepysnorlax05.github.io/mlr3changepoint/articles/learners.html)
+  and their hyperparameters.
+- Score and plot predictions in [evaluation and
+  plots](https://sleepysnorlax05.github.io/mlr3changepoint/articles/evaluation.html).
+- Follow the case studies on [neuroblastoma copy-number
+  profiles](https://sleepysnorlax05.github.io/mlr3changepoint/articles/case-study-neuroblastoma.html),
+  [peak detection in count
+  data](https://sleepysnorlax05.github.io/mlr3changepoint/articles/case-study-peaks.html)
+  and a [learner
+  benchmark](https://sleepysnorlax05.github.io/mlr3changepoint/articles/case-study-benchmark.html).
+
 ## Installation
+
+Install the development version from GitHub:
 
 ``` r
 
@@ -35,30 +84,42 @@ not on CRAN. Its upstream sources no longer compile on macOS and
 Windows, so pak installs a patched copy from
 `sleepysnorlax05/mmit/Rpackage`.
 
-## Learners and measures
+## Learners
 
-| Learner | Regressor |
-|----|----|
-| `changepoint.intregrcv` | L1-regularised linear interval regression (penaltyLearning) |
-| `changepoint.xgboost.aft` | Gradient boosted trees with the accelerated failure time loss (xgboost) |
-| `changepoint.mmit` | Maximum margin interval tree (mmit) |
-| `changepoint.mmif` | Maximum margin interval forest (mmit) |
+| Key | Label | Packages |
+|----|----|----|
+| [changepoint.intregrcv](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.intregrcv.html) | Cross-Validated Interval Regression | [penaltyLearning](https://cran.r-project.org/package=penaltyLearning) |
+| [changepoint.xgboost.aft](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.xgboost.aft.html) | Extreme Gradient Boosting AFT | [xgboost](https://cran.r-project.org/package=xgboost) |
+| [changepoint.mmit](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmit.html) | Max Margin Interval Tree | [mmit](https://github.com/aldro61/mmit) |
+| [changepoint.mmif](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.mmif.html) | Max Margin Interval Forest | [mmit](https://github.com/aldro61/mmit), [future.apply](https://cran.r-project.org/package=future.apply) |
+| [changepoint.featureless](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_learners_changepoint.featureless.html) | Featureless Constant Penalty | [penaltyLearning](https://cran.r-project.org/package=penaltyLearning) |
 
-| Measure | What it scores |
-|----|----|
-| `changepoint.label_error` | Share of labelled regions with a false positive or false negative |
-| `changepoint.label_accuracy` | One minus the label error |
-| `changepoint.auc` | Area under the ROC curve traced by shifting all predicted penalties |
+Every learner also needs
+[penaltyLearning](https://cran.r-project.org/package=penaltyLearning)
+and computes its model paths with
+[changepoint](https://cran.r-project.org/package=changepoint) for
+`"changepoint"` labels or
+[PeakSegOptimal](https://cran.r-project.org/package=PeakSegOptimal) and
+[PeakError](https://cran.r-project.org/package=PeakError) for `"peak"`
+labels.
+
+## Measures
+
+| Key | Label | What it scores |
+|----|----|----|
+| [changepoint.label_error](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.label_error.html) | Label Error | Share of labelled regions with a false positive or false negative |
+| [changepoint.label_accuracy](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.label_accuracy.html) | Label Accuracy | One minus the label error |
+| [changepoint.auc](https://sleepysnorlax05.github.io/mlr3changepoint/reference/mlr_measures_changepoint.auc.html) | Area Under the ROC Curve | Area under the ROC curve traced by shifting all predicted penalties |
 
 ## Example
 
-Ten toy sequences: odd ones change mean twice and carry a `1change`
-label around each change, even ones are flat with a `0changes` label.
+We simulate ten toy sequences. Odd ones change mean twice and carry a
+`1change` label around each change. Even ones are flat and carry a
+`0changes` label.
 
 ``` r
 
 library(mlr3)
-#> Warning: package 'mlr3' was built under R version 4.4.3
 library(mlr3changepoint)
 library(data.table)
 
@@ -74,28 +135,33 @@ for (i in seq_len(10L)) {
     label[[i]] = data.table(start = 1, end = 100, label = "0changes")
   }
 }
+```
+
+`TaskCpt` stores one sequence and its labels per row.
+
+``` r
+
 task = TaskCpt$new(
   id = "toy", backend = data.table(signal = signal, label = label),
   target = "label", sequence = "signal", label_type = "changepoint"
 )
 ```
 
-Train the interval regression learner, predict a `log(lambda)` for each
-sequence, and score the label error and AUC.
+We train the interval regression learner and predict a `log(lambda)` for
+each sequence.
 
 ``` r
 
 learner = lrn("changepoint.intregrcv", Kmax = 3L, n.folds = 2L, min.observations = 2L)
 learner$train(task)
-#> Loading required namespace: future.apply
-#> Warning: package 'future' was built under R version 4.4.3
-#> Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-#> i Please use `linewidth` instead.
-#> i The deprecated feature was likely used in the penaltyLearning package.
-#>   Please report the issue at <https://github.com/tdhock/penaltyLearning/issues>.
-#> This warning is displayed once per session.
-#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 prediction = learner$predict(task)
+```
+
+The measures decode the segmentation each penalty selects and score it
+against the labels.
+
+``` r
+
 prediction$score(msrs(c("changepoint.label_error", "changepoint.auc")), task = task)
 #> changepoint.label_error         changepoint.auc 
 #>                       0                       1
@@ -112,15 +178,13 @@ ggplot2::autoplot(prediction, task = task)
 ![Ten toy sequences with shaded labelled regions and dashed lines at the
 predicted changes.](reference/figures/README-autoplot-1.png)
 
-## Documentation
+## Bugs, questions, feedback
 
-The [package
-website](https://sleepysnorlax05.github.io/mlr3changepoint/) starts with
-[Getting
-started](https://sleepysnorlax05.github.io/mlr3changepoint/articles/getting-started.html).
-It also has a chapter on each part of the package and case studies on
-real and simulated data. Report bugs and questions in the [issue
-tracker](https://github.com/sleepysnorlax05/mlr3changepoint/issues).
+*mlr3changepoint* is free and open source software, and feedback is
+welcome. Report bugs, ask questions or suggest features in the [issue
+tracker](https://github.com/sleepysnorlax05/mlr3changepoint/issues). A
+minimal reproducible example made with
+[reprex](https://reprex.tidyverse.org/) makes a bug much easier to fix.
 
 ## Related work
 
@@ -143,7 +207,7 @@ tracker](https://github.com/sleepysnorlax05/mlr3changepoint/issues).
 
 ## Acknowledgements
 
-`mlr3changepoint` is developed during [Google Summer of Code
+*mlr3changepoint* is developed during [Google Summer of Code
 2026](https://summerofcode.withgoogle.com/) for the [R Project for
 Statistical Computing](https://www.r-project.org/). Thanks to the
 mentors Toby Hocking, Marc Becker and Tung Lam Nguyen, and to the
