@@ -271,7 +271,8 @@ cpt_path_peak = function(signal, Kmax) {
 #'
 #' The branch point: both label types are normalized to the one schema
 #' `penaltyLearning::targetIntervals()` understands, i.e. per model per problem
-#' with `min.log.lambda`, `max.log.lambda`, `fp`, `fn`, `errors`.
+#' with `min.log.lambda`, `max.log.lambda`, `fp`, `fn`, `errors`, plus the
+#' `possible.fp`, `possible.fn` and `labels` totals [penaltyLearning::ROChange()] needs.
 #'
 #' @param sm (`data.table`)\cr Combined [penaltyLearning::modelSelection()] output
 #'   across problems, carrying `problem`, `complexity`, `min.log.lambda`,
@@ -335,6 +336,8 @@ cpt_errors_peak = function(sm, predicted, regions) {
 
       fp = integer(.N)
       fn = integer(.N)
+      possible_fp = integer(.N)
+      possible_fn = integer(.N)
       for (i in seq_len(.N)) {
         pk = pred_p[pred_p[["complexity"]] == cx[i], ]
         peak_df = data.frame(
@@ -345,14 +348,21 @@ cpt_errors_peak = function(sm, predicted, regions) {
         pe = PeakError::PeakError(peak_df, reg_df)
         fp[i] = sum(pe$fp)
         fn[i] = sum(pe$fn)
+        # ROChange() totals: a region can hold a false positive (possible.fp) or a
+        # false negative (possible.tp, since fn = possible.tp - tp).
+        possible_fp[i] = sum(pe$possible.fp)
+        possible_fn[i] = sum(pe$possible.tp)
       }
 
       list(
         complexity = cx,
         min.log.lambda = .SD[["min.log.lambda"]],
         max.log.lambda = .SD[["max.log.lambda"]],
+        possible.fp = possible_fp,
         fp = fp,
+        possible.fn = possible_fn,
         fn = fn,
+        labels = rep(nrow(reg_p), .N),
         errors = fp + fn
       )
     },
@@ -458,6 +468,61 @@ cpt_target_intervals = function(task, Kmax) {
 #' @noRd
 cpt_is_selected = function(ms, log_lambda) {
   ms[["min.log.lambda"]] <= log_lambda & log_lambda < ms[["max.log.lambda"]]
+}
+
+#' Resolve the complexity cap each predicted penalty was learned under
+#'
+#' One precedence for every scorer and plot: the `Kmax` a learner recorded per
+#' sequence in the prediction's `extra` data, else an explicit `Kmax`, else the
+#' learner's trained cap, else its configured one.
+#'
+#' @param prediction ([PredictionCpt]).
+#' @param learner ([mlr3::Learner] | `NULL`).
+#' @param Kmax (`integer(1)` | `NULL`).
+#' @return `integer()`, one cap per predicted row; errors if none resolves.
+#' @noRd
+cpt_prediction_kmax = function(prediction, learner = NULL, Kmax = NULL) {
+  n = length(prediction$row_ids)
+  fallback = Kmax %??% learner$model$Kmax %??% learner$param_set$values$Kmax
+  kmax = prediction$data$extra$Kmax %??% rep(fallback, n)
+  if (!test_integerish(kmax, lower = 1, any.missing = FALSE, len = n)) {
+    stopf(paste0(
+      "a positive integer Kmax per sequence is needed, but the prediction records none: ",
+      "pass a trained learner to $score() or Kmax to autoplot()"
+    ))
+  }
+  kmax
+}
+
+#' Label errors of every model of every predicted sequence, each under its own Kmax
+#'
+#' @return `cpt_label_errors()` output for `prediction$row_ids`.
+#' @noRd
+cpt_prediction_errors = function(prediction, task, learner = NULL, Kmax = NULL) {
+  rows = prediction$row_ids
+  kmax = cpt_prediction_kmax(prediction, learner, Kmax)
+  me = list()
+  for (k in unique(kmax)) {
+    me[[length(me) + 1L]] = cpt_label_errors(task, k, rows[kmax == k])
+  }
+  rbindlist(me)
+}
+
+#' ROC curve of a prediction, traced by shifting every predicted log(lambda) by one constant
+#'
+#' @return [penaltyLearning::ROChange()] output, or `NULL` when the labels lack
+#'   either kind (ROChange() stops: no region can hold a false positive, or none
+#'   a false negative), where the curve is undefined.
+#' @noRd
+cpt_roc = function(prediction, task, learner = NULL, Kmax = NULL) {
+  me = cpt_prediction_errors(prediction, task, learner, Kmax)
+  if (sum(me$possible.fp) == 0 || sum(me$possible.fn) == 0) {
+    return(NULL)
+  }
+  pred = data.table(problem = prediction$row_ids, pred.log.lambda = prediction$response)
+  # labelError() drops sequences without labels; they add no ROC point.
+  pred = pred[pred$problem %in% me$problem, ]
+  penaltyLearning::ROChange(me, pred, problem.vars = "problem")
 }
 
 #' Segment one sequence at a single learned penalty (predict-side)
