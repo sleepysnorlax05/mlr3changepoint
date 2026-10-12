@@ -39,7 +39,9 @@ This learner can be retrieved via \link[mlr3:mlr_learners]{mlr3::mlr_learners} w
 changepoints (\code{label_type = "changepoint"}) or peaks (\code{label_type = "peak"})
 the per-sequence segment path is searched over, applied identically at train
 and predict time. The learner consumes it to build the target penalty
-intervals; it is not forwarded to the solver.
+intervals; it is not forwarded to the solver. Each prediction records it per
+sequence in its \code{extra} data (\code{as.data.table(prediction)$Kmax}), so the
+label-error measure decodes the predicted penalty under the same cap.
 
 \code{nrounds} (\code{integer(1)}, required) is the number of boosting rounds,
 initialized to \code{100}. \code{nthread} is initialized to \code{1}. The remaining

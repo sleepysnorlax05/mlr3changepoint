@@ -17,6 +17,10 @@ create_empty_prediction_data.TaskCpt = function(task, learner) {
     parts$weights = numeric()
   }
 
+  # Learner predictions carry Kmax in extra; an empty one must too, or c() refuses
+  # to combine it with them.
+  parts$extra = list(Kmax = integer())
+
   class(parts) = c("PredictionDataCpt", "PredictionData")
   parts
 }

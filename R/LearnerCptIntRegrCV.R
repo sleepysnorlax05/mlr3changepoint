@@ -31,7 +31,10 @@
 #' changepoints (`label_type = "changepoint"`) or peaks (`label_type = "peak"`)
 #' the per-sequence segment path is searched over, applied identically at train
 #' and predict time. The learner consumes it to build the target penalty
-#' intervals; it is not forwarded to the solver. The remaining parameters are
+#' intervals; it is not forwarded to the solver. Each prediction records it per
+#' sequence in its `extra` data (`as.data.table(prediction)$Kmax`), so the
+#' label-error measure decodes the predicted penalty under the same cap. The
+#' remaining parameters are
 #' passed to [penaltyLearning::IntervalRegressionCV()]; see there for their
 #' meaning and defaults.
 #'
@@ -165,7 +168,7 @@ LearnerCptIntRegrCV = R6::R6Class(
       feature_mat = cpt_feature_matrix(parts, cols = self$model$feature_names)
       # predict.IntervalRegression returns an n x 1 matrix of log(penalty).
       pred = predict(self$model$fit, feature_mat)
-      list(response = as.numeric(pred))
+      cpt_prediction(pred, self$model$Kmax)
     }
   )
 )

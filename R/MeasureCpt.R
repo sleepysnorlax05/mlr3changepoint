@@ -9,7 +9,8 @@
 #' A changepoint measure scores a [PredictionCpt], whose `response` is the predicted penalty
 #' `log(lambda)` rather than a segmentation. Deriving the segmentation that penalty selects needs
 #' the sequences and the complexity cap they were fitted under, so a measure will usually declare
-#' the `"requires_task"` and `"requires_learner"` properties and read `Kmax` from the learner.
+#' the `"requires_task"` property and read `Kmax` from the prediction's `extra` data, where the
+#' learners of this package record it per sequence.
 #'
 #' @family Measure
 #'

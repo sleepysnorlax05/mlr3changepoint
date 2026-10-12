@@ -12,11 +12,19 @@ total number of labels (Hocking et al.'s percent-incorrect-labels metric).
 A \link{PredictionCpt} stores only the predicted penalty \code{log(lambda)} per
 sequence, not a segmentation. This measure re-derives the model path each
 penalty selects (via the shared label-error pipeline in \code{cpt_label_errors()}),
-reads off the model at that penalty, and counts its label errors. It therefore
-declares \code{"requires_task"} (to read the sequences and labels) and
-\code{"requires_learner"} (to read the \code{Kmax} complexity cap the path was fit
-under). It also declares \code{"na_score"}, since an empty prediction, a
-non-finite predicted penalty, or a test set without labels scores \code{NA}.
+reads off the model at that penalty, and counts its label errors. That path
+depends on the complexity cap \code{Kmax} the penalty was learned under, which the
+learners of this package record per sequence in the prediction's \code{extra}
+data (\code{as.data.table(prediction)$Kmax}). Reading it from the prediction keeps
+the score right for wrapped learners (a \code{GraphLearner} prefixes parameter
+ids) and for resampled predictions whose folds were tuned to different caps.
+A prediction built without it as a whole (e.g. by hand) falls back to the
+\code{Kmax} the learner passed to \verb{$score()} was trained with (or, untrained, is
+set to); scoring errors if neither gives one.
+
+The measure declares \code{"requires_task"} (to read the sequences and labels) and
+\code{"na_score"}, since an empty prediction, a non-finite predicted penalty, or a
+test set without labels scores \code{NA}.
 }
 \details{
 The score micro-averages over sequences: \code{sum(w * errors) / sum(w * n_labels)},
@@ -65,9 +73,7 @@ learner = lrn("changepoint.intregrcv",
 set.seed(36)
 learner$train(task)
 prediction = learner$predict(task)
-prediction$score(
-  msr("changepoint.label_error"), task = task, learner = learner
-)
+prediction$score(msr("changepoint.label_error"), task = task)
 }
 
 }

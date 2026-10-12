@@ -51,6 +51,11 @@ test_that("missing values error before reaching a solver", {
   expect_error(cpt_segment_path(c(1, NA, 3), 2L, "changepoint"), "missing values")
 })
 
+test_that("a missing or non-positive Kmax errors before reaching a solver", {
+  expect_error(cpt_segment_path(as.numeric(1:10), NULL, "changepoint"), "Kmax")
+  expect_error(cpt_segment_path(as.numeric(1:10), 0L, "changepoint"), "Kmax")
+})
+
 test_that("changepoint path contains the null model and nested changes", {
   skip_if_not_installed("changepoint")
 
