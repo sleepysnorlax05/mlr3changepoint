@@ -1,0 +1,11 @@
+---
+title: "Case studies"
+---
+
+Each case study is a complete example on its own page, from data to scores. Pick the one closest to your problem.
+
+| Case study | Data | Label type | Learners | Also shows |
+|---|---|---|---|---|
+| [Neuroblastoma copy-number profiles](case-study-neuroblastoma.html) | Real copy-number profiles from the neuroblastoma package | `"changepoint"` | All four | Converting genomic coordinates to labels, a BIC baseline and the ROC curve |
+| [Peak detection in count data](case-study-peaks.html) | Simulated Poisson counts | `"peak"` | `changepoint.intregrcv` | `peakStart` and `peakEnd` labels and a train and test split |
+| [Benchmarking the learners](case-study-benchmark.html) | Simulated sequences with different noise levels | `"changepoint"` | All four | Training time against the number of sequences on a log-log scale |
