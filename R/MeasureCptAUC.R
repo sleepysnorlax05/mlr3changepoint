@@ -13,9 +13,11 @@
 #' Changepoint ROC curves need not be monotonic: a curve with loops can enclose an area above 1
 #' (Hillman and Hocking 2023), so the range is unbounded.
 #'
-#' The measure declares `"requires_task"` and `"na_score"`: an empty prediction, a non-finite predicted
-#' penalty, or labels with no region that can hold a false positive (or none that can hold a false
-#' negative) score `NA`. [penaltyLearning::ROChange()] is unweighted, so the measure ignores weights.
+#' Sequences without labels add no point to the curve and are left out, as in the
+#' label error. The measure declares `"requires_task"` and `"na_score"`: an empty
+#' prediction, a non-finite predicted penalty, or labels with no region that can
+#' hold a false positive (or none that can hold a false negative) score `NA`.
+#' [penaltyLearning::ROChange()] is unweighted, so the measure ignores weights.
 #'
 #' @references
 #' Hillman J, Hocking TD (2023). "Optimizing ROC Curves with a Sort-Based Surrogate Loss for Binary
